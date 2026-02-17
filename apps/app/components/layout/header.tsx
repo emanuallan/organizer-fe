@@ -1,3 +1,4 @@
+import { useSessionQuery } from "@/lib/queries/session";
 import { Button } from "@repo/ui";
 import { Menu, Settings, X } from "lucide-react";
 
@@ -7,6 +8,7 @@ interface HeaderProps {
 }
 
 export function Header({ isSidebarOpen, onMenuToggle }: HeaderProps) {
+  const { data: session } = useSessionQuery();
   return (
     <header className="h-18 border-b bg-background flex items-center px-4 gap-4">
       <Button
@@ -26,7 +28,8 @@ export function Header({ isSidebarOpen, onMenuToggle }: HeaderProps) {
         <div>
           <h1 className="text-lg font-semibold">Dashboard</h1>
           <p className="text-sm text-muted-foreground sm:block hidden">
-            Welcome back, Alex. Here's what's happening with your league.
+            Welcome back, {session?.user.name.split(" ")[0]}. Here's what's
+            happening with your organization.
           </p>
         </div>
       </div>
