@@ -1,3 +1,4 @@
+import { useStaff } from "@/lib/queries/staff";
 import {
   Avatar,
   AvatarFallback,
@@ -22,48 +23,8 @@ export const Route = createFileRoute("/(app)/staff")({
 });
 
 function Staff() {
-  const users = [
-    {
-      id: 1,
-      name: "John Doe",
-      email: "john.doe@example.com",
-      role: "Admin",
-      status: "Active",
-      lastActive: "2 hours ago",
-    },
-    {
-      id: 2,
-      name: "Jane Smith",
-      email: "jane.smith@example.com",
-      role: "Editor",
-      status: "Active",
-      lastActive: "5 minutes ago",
-    },
-    {
-      id: 3,
-      name: "Bob Johnson",
-      email: "bob.johnson@example.com",
-      role: "Viewer",
-      status: "Inactive",
-      lastActive: "2 days ago",
-    },
-    {
-      id: 4,
-      name: "Alice Brown",
-      email: "alice.brown@example.com",
-      role: "Editor",
-      status: "Active",
-      lastActive: "1 hour ago",
-    },
-    {
-      id: 5,
-      name: "Charlie Wilson",
-      email: "charlie.wilson@example.com",
-      role: "Viewer",
-      status: "Active",
-      lastActive: "30 minutes ago",
-    },
-  ];
+  const { data } = useStaff();
+  console.log(data);
 
   return (
     <div className="p-6 space-y-6">
@@ -150,44 +111,44 @@ function Staff() {
                   </tr>
                 </thead>
                 <tbody>
-                  {users.map((user) => (
-                    <tr key={user.id} className="border-b">
+                  {data?.map((staff) => (
+                    <tr key={staff.user.id} className="border-b">
                       <td className="p-4">
                         <div className="flex items-center gap-3">
                           <Avatar>
                             <AvatarFallback>
-                              {user.name
+                              {staff.user.name
                                 .split(" ")
                                 .map((n) => n[0])
                                 .join("")}
                             </AvatarFallback>
                           </Avatar>
                           <div>
-                            <p className="font-medium">{user.name}</p>
+                            <p className="font-medium">{staff.user.name}</p>
                             <p className="text-sm text-muted-foreground">
-                              {user.email}
+                              {staff.user.email}
                             </p>
                           </div>
                         </div>
                       </td>
                       <td className="p-4">
                         <span className="px-2 py-1 text-xs font-medium rounded-full bg-secondary">
-                          {user.role}
+                          {staff.role}
                         </span>
                       </td>
                       <td className="p-4">
                         <span
                           className={`px-2 py-1 text-xs font-medium rounded-full ${
-                            user.status === "Active"
+                            "Active" === "Active"
                               ? "bg-green-100 text-green-700"
                               : "bg-gray-100 text-gray-700"
                           }`}
                         >
-                          {user.status}
+                          {"Active"}
                         </span>
                       </td>
                       <td className="p-4 text-sm text-muted-foreground">
-                        {user.lastActive}
+                        {new Date(staff.updatedAt).toLocaleDateString()}
                       </td>
                       <td className="p-4">
                         <Button variant="ghost" size="sm">
