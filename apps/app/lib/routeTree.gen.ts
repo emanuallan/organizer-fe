@@ -13,9 +13,11 @@ import { Route as appRouteRouteImport } from './../routes/(app)/route'
 import { Route as appIndexRouteImport } from './../routes/(app)/index'
 import { Route as authSignupRouteImport } from './../routes/(auth)/signup'
 import { Route as authLoginRouteImport } from './../routes/(auth)/login'
-import { Route as appUsersRouteImport } from './../routes/(app)/users'
+import { Route as appTeamsRouteImport } from './../routes/(app)/teams'
+import { Route as appStaffRouteImport } from './../routes/(app)/staff'
 import { Route as appSettingsRouteImport } from './../routes/(app)/settings'
 import { Route as appReportsRouteImport } from './../routes/(app)/reports'
+import { Route as appPlayersRouteImport } from './../routes/(app)/players'
 import { Route as appDashboardRouteImport } from './../routes/(app)/dashboard'
 import { Route as appAnalyticsRouteImport } from './../routes/(app)/analytics'
 import { Route as appAboutRouteImport } from './../routes/(app)/about'
@@ -39,9 +41,14 @@ const authLoginRoute = authLoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const appUsersRoute = appUsersRouteImport.update({
-  id: '/users',
-  path: '/users',
+const appTeamsRoute = appTeamsRouteImport.update({
+  id: '/teams',
+  path: '/teams',
+  getParentRoute: () => appRouteRoute,
+} as any)
+const appStaffRoute = appStaffRouteImport.update({
+  id: '/staff',
+  path: '/staff',
   getParentRoute: () => appRouteRoute,
 } as any)
 const appSettingsRoute = appSettingsRouteImport.update({
@@ -52,6 +59,11 @@ const appSettingsRoute = appSettingsRouteImport.update({
 const appReportsRoute = appReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
+  getParentRoute: () => appRouteRoute,
+} as any)
+const appPlayersRoute = appPlayersRouteImport.update({
+  id: '/players',
+  path: '/players',
   getParentRoute: () => appRouteRoute,
 } as any)
 const appDashboardRoute = appDashboardRouteImport.update({
@@ -74,9 +86,11 @@ export interface FileRoutesByFullPath {
   '/about': typeof appAboutRoute
   '/analytics': typeof appAnalyticsRoute
   '/dashboard': typeof appDashboardRoute
+  '/players': typeof appPlayersRoute
   '/reports': typeof appReportsRoute
   '/settings': typeof appSettingsRoute
-  '/users': typeof appUsersRoute
+  '/staff': typeof appStaffRoute
+  '/teams': typeof appTeamsRoute
   '/login': typeof authLoginRoute
   '/signup': typeof authSignupRoute
   '/': typeof appIndexRoute
@@ -85,9 +99,11 @@ export interface FileRoutesByTo {
   '/about': typeof appAboutRoute
   '/analytics': typeof appAnalyticsRoute
   '/dashboard': typeof appDashboardRoute
+  '/players': typeof appPlayersRoute
   '/reports': typeof appReportsRoute
   '/settings': typeof appSettingsRoute
-  '/users': typeof appUsersRoute
+  '/staff': typeof appStaffRoute
+  '/teams': typeof appTeamsRoute
   '/login': typeof authLoginRoute
   '/signup': typeof authSignupRoute
   '/': typeof appIndexRoute
@@ -98,9 +114,11 @@ export interface FileRoutesById {
   '/(app)/about': typeof appAboutRoute
   '/(app)/analytics': typeof appAnalyticsRoute
   '/(app)/dashboard': typeof appDashboardRoute
+  '/(app)/players': typeof appPlayersRoute
   '/(app)/reports': typeof appReportsRoute
   '/(app)/settings': typeof appSettingsRoute
-  '/(app)/users': typeof appUsersRoute
+  '/(app)/staff': typeof appStaffRoute
+  '/(app)/teams': typeof appTeamsRoute
   '/(auth)/login': typeof authLoginRoute
   '/(auth)/signup': typeof authSignupRoute
   '/(app)/': typeof appIndexRoute
@@ -111,9 +129,11 @@ export interface FileRouteTypes {
     | '/about'
     | '/analytics'
     | '/dashboard'
+    | '/players'
     | '/reports'
     | '/settings'
-    | '/users'
+    | '/staff'
+    | '/teams'
     | '/login'
     | '/signup'
     | '/'
@@ -122,9 +142,11 @@ export interface FileRouteTypes {
     | '/about'
     | '/analytics'
     | '/dashboard'
+    | '/players'
     | '/reports'
     | '/settings'
-    | '/users'
+    | '/staff'
+    | '/teams'
     | '/login'
     | '/signup'
     | '/'
@@ -134,9 +156,11 @@ export interface FileRouteTypes {
     | '/(app)/about'
     | '/(app)/analytics'
     | '/(app)/dashboard'
+    | '/(app)/players'
     | '/(app)/reports'
     | '/(app)/settings'
-    | '/(app)/users'
+    | '/(app)/staff'
+    | '/(app)/teams'
     | '/(auth)/login'
     | '/(auth)/signup'
     | '/(app)/'
@@ -178,11 +202,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof authLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/(app)/users': {
-      id: '/(app)/users'
-      path: '/users'
-      fullPath: '/users'
-      preLoaderRoute: typeof appUsersRouteImport
+    '/(app)/teams': {
+      id: '/(app)/teams'
+      path: '/teams'
+      fullPath: '/teams'
+      preLoaderRoute: typeof appTeamsRouteImport
+      parentRoute: typeof appRouteRoute
+    }
+    '/(app)/staff': {
+      id: '/(app)/staff'
+      path: '/staff'
+      fullPath: '/staff'
+      preLoaderRoute: typeof appStaffRouteImport
       parentRoute: typeof appRouteRoute
     }
     '/(app)/settings': {
@@ -197,6 +228,13 @@ declare module '@tanstack/react-router' {
       path: '/reports'
       fullPath: '/reports'
       preLoaderRoute: typeof appReportsRouteImport
+      parentRoute: typeof appRouteRoute
+    }
+    '/(app)/players': {
+      id: '/(app)/players'
+      path: '/players'
+      fullPath: '/players'
+      preLoaderRoute: typeof appPlayersRouteImport
       parentRoute: typeof appRouteRoute
     }
     '/(app)/dashboard': {
@@ -227,9 +265,11 @@ interface appRouteRouteChildren {
   appAboutRoute: typeof appAboutRoute
   appAnalyticsRoute: typeof appAnalyticsRoute
   appDashboardRoute: typeof appDashboardRoute
+  appPlayersRoute: typeof appPlayersRoute
   appReportsRoute: typeof appReportsRoute
   appSettingsRoute: typeof appSettingsRoute
-  appUsersRoute: typeof appUsersRoute
+  appStaffRoute: typeof appStaffRoute
+  appTeamsRoute: typeof appTeamsRoute
   appIndexRoute: typeof appIndexRoute
 }
 
@@ -237,9 +277,11 @@ const appRouteRouteChildren: appRouteRouteChildren = {
   appAboutRoute: appAboutRoute,
   appAnalyticsRoute: appAnalyticsRoute,
   appDashboardRoute: appDashboardRoute,
+  appPlayersRoute: appPlayersRoute,
   appReportsRoute: appReportsRoute,
   appSettingsRoute: appSettingsRoute,
-  appUsersRoute: appUsersRoute,
+  appStaffRoute: appStaffRoute,
+  appTeamsRoute: appTeamsRoute,
   appIndexRoute: appIndexRoute,
 }
 

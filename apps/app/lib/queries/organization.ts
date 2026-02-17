@@ -27,7 +27,5 @@ export function useOrganization() {
     queryKey: organizationQueryKey,
     queryFn: () => trpcClient.organization.memberships.query(),
     enabled: session?.user != null,
-    staleTime: 60_000,
-    gcTime: 5 * 60_000,
   });
 }

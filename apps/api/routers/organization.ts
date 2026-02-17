@@ -1,6 +1,7 @@
-import { member, organization } from "@repo/db";
-import { eq } from "drizzle-orm";
+import { member, organization, team } from "@repo/db";
+import { and, eq } from "drizzle-orm";
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import { protectedProcedure, router } from "../lib/trpc.js";
 
 export const organizationRouter = router({
@@ -21,6 +22,29 @@ export const organizationRouter = router({
 
     return organizations;
   }),
+
+  /** List teams for an organization. User must be a member of the org. */
+  listTeams: protectedProcedure
+    .input(z.object({ organizationId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const membership = await ctx.db.query.member.findFirst({
+        where: and(
+          eq(member.userId, ctx.user.id),
+          eq(member.organizationId, input.organizationId),
+        ),
+      });
+      if (!membership) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Not a member of this organization",
+        });
+      }
+      return ctx.db
+        .select()
+        .from(team)
+        .where(eq(team.organizationId, input.organizationId));
+    }),
+
   list: protectedProcedure.query(() => {
     // TODO: Implement organization listing logic
     return {
