@@ -7,11 +7,14 @@
 
 import { trpcClient } from "@/lib/trpc";
 import type { AppRouter } from "@repo/api";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { inferRouterOutputs } from "@trpc/server";
 import { useOrganization } from "./organization";
 
 export const staffListQueryKey = ["organization", "staff"] as const;
+
+export const STAFF_ROLES = ["admin", "editor", "viewer"] as const;
+export type StaffRole = (typeof STAFF_ROLES)[number];
 
 export type StaffMember =
   inferRouterOutputs<AppRouter>["organization"]["listStaff"][number];
@@ -32,5 +35,25 @@ export function useStaff() {
         organizationId: organizationId!,
       }),
     enabled: Boolean(organizationId),
+  });
+}
+
+/**
+ * Adds staff: adds existing user as member or creates an invitation. Invalidates staff list on success.
+ */
+export function useAddStaff() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: {
+      organizationId: string;
+      name: string;
+      email: string;
+      role: StaffRole;
+    }) => trpcClient.organization.addStaff.mutate(input),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: [...staffListQueryKey, variables.organizationId],
+      });
+    },
   });
 }

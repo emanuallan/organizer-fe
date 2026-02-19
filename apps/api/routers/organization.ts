@@ -1,7 +1,8 @@
-import { member, organization, team } from "@repo/db";
+import { invitation, member, organization, team, user } from "@repo/db";
 import { TRPCError } from "@trpc/server";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
+import { sendOrganizationInvitation } from "../lib/email.js";
 import { protectedProcedure, router } from "../lib/trpc.js";
 
 export const organizationRouter = router({
@@ -154,19 +155,151 @@ export const organizationRouter = router({
       });
     }),
 
+  /** Add staff: add existing user as member, or create invitation if no user. Role enum: admin | editor | viewer. */
+  addStaff: protectedProcedure
+    .input(
+      z.object({
+        organizationId: z.string(),
+        name: z.string().min(1, "Name is required"),
+        email: z.string().email("Invalid email address"),
+        role: z.enum(["admin", "editor", "viewer"]),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const membership = await ctx.db.query.member.findFirst({
+        where: and(
+          eq(member.userId, ctx.user.id),
+          eq(member.organizationId, input.organizationId),
+        ),
+      });
+      if (!membership) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Not a member of this organization",
+        });
+      }
+      const existingUser = await ctx.db.query.user.findFirst({
+        where: eq(user.email, input.email.toLowerCase().trim()),
+        columns: { id: true },
+      });
+      if (existingUser) {
+        const existingMember = await ctx.db.query.member.findFirst({
+          where: and(
+            eq(member.userId, existingUser.id),
+            eq(member.organizationId, input.organizationId),
+          ),
+        });
+        if (existingMember) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "This user is already a member of the organization",
+          });
+        }
+        const [created] = await ctx.db
+          .insert(member)
+          .values({
+            userId: existingUser.id,
+            organizationId: input.organizationId,
+            role: input.role,
+          })
+          .returning();
+        if (!created) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to add member",
+          });
+        }
+        return { type: "member" as const, member: created };
+      }
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7);
+      const [inv] = await ctx.db
+        .insert(invitation)
+        .values({
+          email: input.email.toLowerCase().trim(),
+          inviterId: ctx.user.id,
+          organizationId: input.organizationId,
+          role: input.role,
+          status: "pending",
+          expiresAt,
+        })
+        .returning();
+      if (!inv) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to create invitation",
+        });
+      }
+      const org = await ctx.db.query.organization.findFirst({
+        where: eq(organization.id, input.organizationId),
+        columns: { name: true },
+      });
+      try {
+        await sendOrganizationInvitation(ctx.env, {
+          email: input.email.toLowerCase().trim(),
+          invitationId: inv.id,
+          inviterName: ctx.user.name ?? "A team member",
+          organizationName: org?.name ?? "the organization",
+        });
+      } catch (error) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to send invitation email",
+        });
+      }
+      return { type: "invitation" as const, invitation: inv };
+    }),
+
   invite: protectedProcedure
     .input(
       z.object({
         organizationId: z.string(),
-        email: z.email({ error: "Invalid email address" }),
-        role: z.enum(["admin", "member"]).default("member"),
+        email: z.string().email("Invalid email address"),
+        role: z.enum(["admin", "editor", "viewer"]).default("viewer"),
       }),
     )
-    .mutation(() => {
-      // TODO: Implement organization invite logic
-      return {
-        success: true,
-        inviteId: "invite_" + Date.now(),
-      };
+    .mutation(async ({ ctx, input }) => {
+      const membership = await ctx.db.query.member.findFirst({
+        where: and(
+          eq(member.userId, ctx.user.id),
+          eq(member.organizationId, input.organizationId),
+        ),
+      });
+      if (!membership) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Not a member of this organization",
+        });
+      }
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7);
+      const [inv] = await ctx.db
+        .insert(invitation)
+        .values({
+          email: input.email.toLowerCase().trim(),
+          inviterId: ctx.user.id,
+          organizationId: input.organizationId,
+          role: input.role,
+          status: "pending",
+          expiresAt,
+        })
+        .returning();
+      if (!inv) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to create invitation",
+        });
+      }
+      const org = await ctx.db.query.organization.findFirst({
+        where: eq(organization.id, input.organizationId),
+        columns: { name: true },
+      });
+      await sendOrganizationInvitation(ctx.env, {
+        email: input.email.toLowerCase().trim(),
+        invitationId: inv.id,
+        inviterName: ctx.user.name ?? "A team member",
+        organizationName: org?.name ?? "the organization",
+      });
+      return { type: "invitation" as const, invitation: inv };
     }),
 });

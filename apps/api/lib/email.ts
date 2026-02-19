@@ -192,3 +192,36 @@ export async function sendOTP(
     text,
   });
 }
+
+/**
+ * Send organization invitation email with accept link.
+ * Invitee clicks the link to open the app and accept the invitation (must be signed in or sign up first).
+ */
+export async function sendOrganizationInvitation(
+  env: Pick<Env, "RESEND_API_KEY" | "RESEND_EMAIL_FROM" | "APP_NAME" | "APP_ORIGIN">,
+  options: {
+    email: string;
+    invitationId: string;
+    inviterName: string;
+    organizationName: string;
+  },
+) {
+  const inviteLink = `${env.APP_ORIGIN}/accept-invitation?invitationId=${encodeURIComponent(options.invitationId)}`;
+  const html = `
+    <p>${options.inviterName} has invited you to join <strong>${options.organizationName}</strong> on ${env.APP_NAME}.</p>
+    <p><a href="${inviteLink}">Accept invitation</a></p>
+    <p>This link expires in 7 days. If you didn't expect this invite, you can ignore this email.</p>
+  `.trim();
+  const text = [
+    `${options.inviterName} has invited you to join ${options.organizationName} on ${env.APP_NAME}.`,
+    `Accept invitation: ${inviteLink}`,
+    "This link expires in 7 days. If you didn't expect this invite, you can ignore this email.",
+  ].join("\n\n");
+
+  return sendEmail(env, {
+    to: options.email,
+    subject: `You're invited to join ${options.organizationName}`,
+    html,
+    text,
+  });
+}
