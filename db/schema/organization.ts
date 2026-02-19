@@ -1,7 +1,14 @@
 // Multi-tenant organizations and memberships with role-based access control
 
 import { relations, sql } from "drizzle-orm";
-import { index, pgTable, text, timestamp, unique } from "drizzle-orm/pg-core";
+import {
+  index,
+  pgEnum,
+  pgTable,
+  text,
+  timestamp,
+  unique,
+} from "drizzle-orm/pg-core";
 import { user } from "./user";
 
 /**
@@ -51,7 +58,9 @@ export const member = pgTable(
     organizationId: text()
       .notNull()
       .references(() => organization.id, { onDelete: "cascade" }),
-    role: text().notNull(), // "owner" | "admin" | "member"
+    role: pgEnum("role", ["admin", "editor", "viewer"])()
+      .default("viewer")
+      .notNull(),
     createdAt: timestamp({ withTimezone: true, mode: "date" })
       .defaultNow()
       .notNull(),

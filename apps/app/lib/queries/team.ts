@@ -7,7 +7,7 @@
 
 import { trpcClient } from "@/lib/trpc";
 import type { AppRouter } from "@repo/api";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { inferRouterOutputs } from "@trpc/server";
 import { useOrganization } from "./organization";
 
@@ -32,5 +32,21 @@ export function useTeams() {
         organizationId: organizationId!,
       }),
     enabled: Boolean(organizationId),
+  });
+}
+
+/**
+ * Creates a team in the given organization. Invalidates the team list on success.
+ */
+export function useCreateTeam() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { organizationId: string; name: string }) =>
+      trpcClient.organization.createTeam.mutate(input),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: [...teamListQueryKey, variables.organizationId],
+      });
+    },
   });
 }

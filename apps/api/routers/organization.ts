@@ -45,6 +45,43 @@ export const organizationRouter = router({
         .where(eq(team.organizationId, input.organizationId));
     }),
 
+  /** Create a team in an organization. User must be a member of the org. */
+  createTeam: protectedProcedure
+    .input(
+      z.object({
+        organizationId: z.string(),
+        name: z.string().min(1, "Team name is required"),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const membership = await ctx.db.query.member.findFirst({
+        where: and(
+          eq(member.userId, ctx.user.id),
+          eq(member.organizationId, input.organizationId),
+        ),
+      });
+      if (!membership) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Not a member of this organization",
+        });
+      }
+      const [created] = await ctx.db
+        .insert(team)
+        .values({
+          organizationId: input.organizationId,
+          name: input.name.trim(),
+        })
+        .returning();
+      if (!created) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to create team",
+        });
+      }
+      return created;
+    }),
+
   list: protectedProcedure.query(() => {
     // TODO: Implement organization listing logic
     return {

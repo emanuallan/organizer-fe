@@ -21,6 +21,8 @@ import { Route as appPlayersRouteImport } from './../routes/(app)/players'
 import { Route as appDashboardRouteImport } from './../routes/(app)/dashboard'
 import { Route as appAnalyticsRouteImport } from './../routes/(app)/analytics'
 import { Route as appAboutRouteImport } from './../routes/(app)/about'
+import { Route as appTeamsIndexRouteImport } from './../routes/(app)/teams.index'
+import { Route as appTeamsCreateRouteImport } from './../routes/(app)/teams.create'
 
 const appRouteRoute = appRouteRouteImport.update({
   id: '/(app)',
@@ -81,6 +83,16 @@ const appAboutRoute = appAboutRouteImport.update({
   path: '/about',
   getParentRoute: () => appRouteRoute,
 } as any)
+const appTeamsIndexRoute = appTeamsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => appTeamsRoute,
+} as any)
+const appTeamsCreateRoute = appTeamsCreateRouteImport.update({
+  id: '/create',
+  path: '/create',
+  getParentRoute: () => appTeamsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/about': typeof appAboutRoute
@@ -90,10 +102,12 @@ export interface FileRoutesByFullPath {
   '/reports': typeof appReportsRoute
   '/settings': typeof appSettingsRoute
   '/staff': typeof appStaffRoute
-  '/teams': typeof appTeamsRoute
+  '/teams': typeof appTeamsRouteWithChildren
   '/login': typeof authLoginRoute
   '/signup': typeof authSignupRoute
   '/': typeof appIndexRoute
+  '/teams/create': typeof appTeamsCreateRoute
+  '/teams/': typeof appTeamsIndexRoute
 }
 export interface FileRoutesByTo {
   '/about': typeof appAboutRoute
@@ -103,10 +117,11 @@ export interface FileRoutesByTo {
   '/reports': typeof appReportsRoute
   '/settings': typeof appSettingsRoute
   '/staff': typeof appStaffRoute
-  '/teams': typeof appTeamsRoute
   '/login': typeof authLoginRoute
   '/signup': typeof authSignupRoute
   '/': typeof appIndexRoute
+  '/teams/create': typeof appTeamsCreateRoute
+  '/teams': typeof appTeamsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -118,10 +133,12 @@ export interface FileRoutesById {
   '/(app)/reports': typeof appReportsRoute
   '/(app)/settings': typeof appSettingsRoute
   '/(app)/staff': typeof appStaffRoute
-  '/(app)/teams': typeof appTeamsRoute
+  '/(app)/teams': typeof appTeamsRouteWithChildren
   '/(auth)/login': typeof authLoginRoute
   '/(auth)/signup': typeof authSignupRoute
   '/(app)/': typeof appIndexRoute
+  '/(app)/teams/create': typeof appTeamsCreateRoute
+  '/(app)/teams/': typeof appTeamsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -137,6 +154,8 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/'
+    | '/teams/create'
+    | '/teams/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/about'
@@ -146,10 +165,11 @@ export interface FileRouteTypes {
     | '/reports'
     | '/settings'
     | '/staff'
-    | '/teams'
     | '/login'
     | '/signup'
     | '/'
+    | '/teams/create'
+    | '/teams'
   id:
     | '__root__'
     | '/(app)'
@@ -164,6 +184,8 @@ export interface FileRouteTypes {
     | '/(auth)/login'
     | '/(auth)/signup'
     | '/(app)/'
+    | '/(app)/teams/create'
+    | '/(app)/teams/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -258,8 +280,36 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof appAboutRouteImport
       parentRoute: typeof appRouteRoute
     }
+    '/(app)/teams/': {
+      id: '/(app)/teams/'
+      path: '/'
+      fullPath: '/teams/'
+      preLoaderRoute: typeof appTeamsIndexRouteImport
+      parentRoute: typeof appTeamsRoute
+    }
+    '/(app)/teams/create': {
+      id: '/(app)/teams/create'
+      path: '/create'
+      fullPath: '/teams/create'
+      preLoaderRoute: typeof appTeamsCreateRouteImport
+      parentRoute: typeof appTeamsRoute
+    }
   }
 }
+
+interface appTeamsRouteChildren {
+  appTeamsCreateRoute: typeof appTeamsCreateRoute
+  appTeamsIndexRoute: typeof appTeamsIndexRoute
+}
+
+const appTeamsRouteChildren: appTeamsRouteChildren = {
+  appTeamsCreateRoute: appTeamsCreateRoute,
+  appTeamsIndexRoute: appTeamsIndexRoute,
+}
+
+const appTeamsRouteWithChildren = appTeamsRoute._addFileChildren(
+  appTeamsRouteChildren,
+)
 
 interface appRouteRouteChildren {
   appAboutRoute: typeof appAboutRoute
@@ -269,7 +319,7 @@ interface appRouteRouteChildren {
   appReportsRoute: typeof appReportsRoute
   appSettingsRoute: typeof appSettingsRoute
   appStaffRoute: typeof appStaffRoute
-  appTeamsRoute: typeof appTeamsRoute
+  appTeamsRoute: typeof appTeamsRouteWithChildren
   appIndexRoute: typeof appIndexRoute
 }
 
@@ -281,7 +331,7 @@ const appRouteRouteChildren: appRouteRouteChildren = {
   appReportsRoute: appReportsRoute,
   appSettingsRoute: appSettingsRoute,
   appStaffRoute: appStaffRoute,
-  appTeamsRoute: appTeamsRoute,
+  appTeamsRoute: appTeamsRouteWithChildren,
   appIndexRoute: appIndexRoute,
 }
 
