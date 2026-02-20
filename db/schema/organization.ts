@@ -47,7 +47,7 @@ export type NewOrganization = typeof organization.$inferInsert;
  * @see apps/api/lib/auth.ts creatorRole config
  */
 export const member = pgTable(
-  "member",
+  "organization_member",
   {
     id: text()
       .primaryKey()
@@ -70,9 +70,9 @@ export const member = pgTable(
       .notNull(),
   },
   (table) => [
-    unique("member_user_org_unique").on(table.userId, table.organizationId),
-    index("member_user_id_idx").on(table.userId),
-    index("member_organization_id_idx").on(table.organizationId),
+    unique("organization_member_user_org_unique").on(table.userId, table.organizationId),
+    index("organization_member_user_id_idx").on(table.userId),
+    index("organization_member_organization_id_idx").on(table.organizationId),
   ],
 );
 
