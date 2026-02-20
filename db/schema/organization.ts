@@ -20,7 +20,10 @@ export const organization = pgTable("organization", {
     .primaryKey()
     .default(sql`gen_random_uuid()`),
   name: text().notNull(),
-  slug: text().notNull().unique(),
+  slug: text()
+    .notNull()
+    .unique()
+    .default(sql`gen_random_string(7, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789')`),
   logo: text(),
   metadata: text(), // Better Auth expects string (JSON serialized)
   createdAt: timestamp({ withTimezone: true, mode: "date" })
@@ -70,7 +73,10 @@ export const member = pgTable(
       .notNull(),
   },
   (table) => [
-    unique("organization_member_user_org_unique").on(table.userId, table.organizationId),
+    unique("organization_member_user_org_unique").on(
+      table.userId,
+      table.organizationId,
+    ),
     index("organization_member_user_id_idx").on(table.userId),
     index("organization_member_organization_id_idx").on(table.organizationId),
   ],

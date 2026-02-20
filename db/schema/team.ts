@@ -16,6 +16,12 @@ export const team = pgTable(
       .primaryKey()
       .default(sql`gen_random_uuid()`),
     name: text().notNull(),
+    slug: text()
+      .notNull()
+      .unique()
+      .default(
+        sql`gen_random_string(7, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789')`,
+      ), // defaults to random uppercase letters and numbers of length 7
     organizationId: text()
       .notNull()
       .references(() => organization.id, { onDelete: "cascade" }),
