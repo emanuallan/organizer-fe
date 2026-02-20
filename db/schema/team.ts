@@ -25,6 +25,10 @@ export const team = pgTable(
     organizationId: text()
       .notNull()
       .references(() => organization.id, { onDelete: "cascade" }),
+    status: text()
+      .notNull()
+      .default("active")
+      .$type<"active" | "inactive" | "suspended" | "banned">(),
     createdAt: timestamp({ withTimezone: true, mode: "date" })
       .defaultNow()
       .notNull(),

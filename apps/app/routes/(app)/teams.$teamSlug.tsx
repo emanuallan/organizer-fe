@@ -55,9 +55,7 @@ function TeamDetail() {
           ) : (
             <>
               <h2 className="text-2xl font-bold">{team?.name}</h2>
-              <p className="text-muted-foreground">
-                Team details and members
-              </p>
+              <p className="text-muted-foreground">Team details and members</p>
             </>
           )}
         </div>
@@ -87,12 +85,36 @@ function TeamDetail() {
             </CardHeader>
             <CardContent className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">Name</p>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Name
+                </p>
                 <p className="font-medium">{team.name}</p>
               </div>
               <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">Slug</p>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Team Code
+                </p>
                 <p className="font-mono text-sm">{team.slug}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">
+                  Status
+                </p>
+                <span
+                  className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full capitalize ${
+                    team.status === "active"
+                      ? "bg-green-100 text-green-700"
+                      : team.status === "inactive"
+                        ? "bg-gray-100 text-gray-700"
+                        : team.status === "suspended"
+                          ? "bg-amber-100 text-amber-700"
+                          : team.status === "banned"
+                            ? "bg-red-100 text-red-700"
+                            : "bg-muted text-muted-foreground"
+                  }`}
+                >
+                  {team.status ?? "—"}
+                </span>
               </div>
               <div className="space-y-1">
                 <p className="text-sm font-medium text-muted-foreground">
@@ -116,9 +138,7 @@ function TeamDetail() {
           <Card>
             <CardHeader>
               <CardTitle>Players</CardTitle>
-              <CardDescription>
-                Members enlisted on this team
-              </CardDescription>
+              <CardDescription>Members enlisted on this team</CardDescription>
             </CardHeader>
             <CardContent>
               {team.members.length === 0 ? (
@@ -133,9 +153,7 @@ function TeamDetail() {
                         <tr className="border-b bg-muted/50">
                           <th className="text-left p-4 font-medium">Player</th>
                           <th className="text-left p-4 font-medium">Email</th>
-                          <th className="text-left p-4 font-medium">
-                            Joined
-                          </th>
+                          <th className="text-left p-4 font-medium">Joined</th>
                         </tr>
                       </thead>
                       <tbody>

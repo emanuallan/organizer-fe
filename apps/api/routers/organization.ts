@@ -1,6 +1,6 @@
 import { invitation, member, organization, team, user } from "@repo/db";
 import { TRPCError } from "@trpc/server";
-import { and, eq, ilike } from "drizzle-orm";
+import { and, count, eq, gte, ilike, lt } from "drizzle-orm";
 import { z } from "zod";
 import { sendOrganizationInvitation } from "../lib/email.js";
 import { protectedProcedure, router } from "../lib/trpc.js";
@@ -23,6 +23,101 @@ export const organizationRouter = router({
 
     return organizations;
   }),
+
+  /** Team statistics for the org (total, active, new this month, and prior month counts for deltas). User must be a member of the org. */
+  getTeamStats: protectedProcedure
+    .input(z.object({ organizationId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const membership = await ctx.db.query.member.findFirst({
+        where: and(
+          eq(member.userId, ctx.user.id),
+          eq(member.organizationId, input.organizationId),
+        ),
+      });
+      if (!membership) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Not a member of this organization",
+        });
+      }
+      const now = new Date();
+      const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const startOfLastMonth = new Date(
+        now.getFullYear(),
+        now.getMonth() - 1,
+        1,
+      );
+      const baseWhere = eq(team.organizationId, input.organizationId);
+
+      const [totalRow] = await ctx.db
+        .select({ value: count(team.id) })
+        .from(team)
+        .where(baseWhere);
+
+      const [totalLastMonthRow] = await ctx.db
+        .select({ value: count(team.id) })
+        .from(team)
+        .where(and(baseWhere, lt(team.createdAt, startOfThisMonth)));
+
+      const [activeRow] = await ctx.db
+        .select({ value: count(team.id) })
+        .from(team)
+        .where(and(baseWhere, eq(team.status, "active")));
+
+      const [newThisMonthRow] = await ctx.db
+        .select({ value: count(team.id) })
+        .from(team)
+        .where(
+          and(baseWhere, gte(team.createdAt, startOfThisMonth)),
+        );
+
+      const [newLastMonthRow] = await ctx.db
+        .select({ value: count(team.id) })
+        .from(team)
+        .where(
+          and(
+            baseWhere,
+            gte(team.createdAt, startOfLastMonth),
+            lt(team.createdAt, startOfThisMonth),
+          ),
+        );
+
+      const totalTeams = Number(totalRow?.value ?? 0);
+      const totalTeamsLastMonth = Number(totalLastMonthRow?.value ?? 0);
+      const activeTeams = Number(activeRow?.value ?? 0);
+      const newThisMonth = Number(newThisMonthRow?.value ?? 0);
+      const newLastMonth = Number(newLastMonthRow?.value ?? 0);
+
+      const totalChangePercent =
+        totalTeamsLastMonth > 0
+          ? Math.round(
+              ((totalTeams - totalTeamsLastMonth) / totalTeamsLastMonth) * 100,
+            )
+          : totalTeams > 0
+            ? 100
+            : 0;
+
+      const activePercent =
+        totalTeams > 0 ? Math.round((activeTeams / totalTeams) * 100) : 0;
+
+      const newThisMonthChangePercent =
+        newLastMonth > 0
+          ? Math.round(
+              ((newThisMonth - newLastMonth) / newLastMonth) * 100,
+            )
+          : newThisMonth > 0
+            ? 100
+            : 0;
+
+      return {
+        totalTeams,
+        totalChangePercent,
+        activeTeams,
+        activePercent,
+        newThisMonth,
+        newThisMonthChangePercent,
+      };
+    }),
 
   /** List teams for an organization. Optional search filters by team name (case-insensitive). User must be a member of the org. */
   listTeams: protectedProcedure

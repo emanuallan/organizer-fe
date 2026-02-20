@@ -1,5 +1,5 @@
 import { useDebouncedValue } from "@/lib/hooks/useDebouncedValue";
-import { useDeleteTeam, useTeams } from "@/lib/queries/team";
+import { useDeleteTeam, useTeamStats, useTeams } from "@/lib/queries/team";
 import {
   Avatar,
   AvatarFallback,
@@ -37,10 +37,30 @@ const TABLE_SKELETON_ROWS = 5;
 
 const SEARCH_DEBOUNCE_MS = 800;
 
+const TEAM_STATUS_STYLES: Record<
+  string,
+  { className: string; label: string }
+> = {
+  active: { className: "bg-green-100 text-green-700", label: "Active" },
+  inactive: { className: "bg-gray-100 text-gray-700", label: "Inactive" },
+  suspended: { className: "bg-amber-100 text-amber-700", label: "Suspended" },
+  banned: { className: "bg-red-100 text-red-700", label: "Banned" },
+};
+
+function getStatusStyle(status: string) {
+  return (
+    TEAM_STATUS_STYLES[status] ?? {
+      className: "bg-muted text-muted-foreground",
+      label: status || "—",
+    }
+  );
+}
+
 function TeamsList() {
   const [searchInput, setSearchInput] = useState("");
   const debouncedSearch = useDebouncedValue(searchInput, SEARCH_DEBOUNCE_MS);
   const { data: teams, isPending } = useTeams(debouncedSearch);
+  const { data: stats, isPending: isStatsPending } = useTeamStats();
   const deleteTeam = useDeleteTeam();
   const [openMenuTeamId, setOpenMenuTeamId] = useState<string | null>(null);
   const [teamToDelete, setTeamToDelete] = useState<{
@@ -82,16 +102,19 @@ function TeamsList() {
             <UsersIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            {isPending ? (
+            {isStatsPending ? (
               <>
                 <Skeleton className="h-8 w-12 mb-2" />
                 <Skeleton className="h-3 w-28" />
               </>
             ) : (
               <>
-                <div className="text-2xl font-bold">{teams?.length}</div>
+                <div className="text-2xl font-bold">{stats?.totalTeams ?? 0}</div>
                 <p className="text-xs text-muted-foreground">
-                  +10% from last month
+                  {stats?.totalChangePercent !== undefined &&
+                  stats.totalChangePercent !== 0
+                    ? `${stats.totalChangePercent >= 0 ? "+" : ""}${stats.totalChangePercent}% from last month`
+                    : "No change from last month"}
                 </p>
               </>
             )}
@@ -103,16 +126,20 @@ function TeamsList() {
             <UsersIcon className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            {isPending ? (
+            {isStatsPending ? (
               <>
                 <Skeleton className="h-8 w-12 mb-2" />
                 <Skeleton className="h-3 w-24" />
               </>
             ) : (
               <>
-                <div className="text-2xl font-bold">{teams?.length}</div>
+                <div className="text-2xl font-bold">
+                  {stats?.activeTeams ?? 0}
+                </div>
                 <p className="text-xs text-muted-foreground">
-                  72% of total teams
+                  {stats?.totalTeams != null && stats.totalTeams > 0
+                    ? `${stats?.activePercent ?? 0}% of total teams`
+                    : "No teams yet"}
                 </p>
               </>
             )}
@@ -126,16 +153,21 @@ function TeamsList() {
             <UserPlus className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            {isPending ? (
+            {isStatsPending ? (
               <>
                 <Skeleton className="h-8 w-12 mb-2" />
                 <Skeleton className="h-3 w-28" />
               </>
             ) : (
               <>
-                <div className="text-2xl font-bold">48</div>
+                <div className="text-2xl font-bold">
+                  {stats?.newThisMonth ?? 0}
+                </div>
                 <p className="text-xs text-muted-foreground">
-                  +32% from last month
+                  {stats?.newThisMonthChangePercent !== undefined &&
+                  stats.newThisMonthChangePercent !== 0
+                    ? `${stats.newThisMonthChangePercent >= 0 ? "+" : ""}${stats.newThisMonthChangePercent}% from last month`
+                    : "No change from last month"}
                 </p>
               </>
             )}
@@ -226,15 +258,18 @@ function TeamsList() {
                             </div>
                           </td>
                           <td className="p-4">
-                            <span
-                              className={`px-2 py-1 text-xs font-medium rounded-full ${
-                                "Active" === "Active"
-                                  ? "bg-green-100 text-green-700"
-                                  : "bg-gray-100 text-gray-700"
-                              }`}
-                            >
-                              {"Active"}
-                            </span>
+                            {(() => {
+                              const { className, label } = getStatusStyle(
+                                team.status ?? "active",
+                              );
+                              return (
+                                <span
+                                  className={`px-2 py-1 text-xs font-medium rounded-full capitalize ${className}`}
+                                >
+                                  {label}
+                                </span>
+                              );
+                            })()}
                           </td>
                           <td className="p-4 text-sm text-muted-foreground">
                             {new Date(team.updatedAt).toLocaleDateString()}

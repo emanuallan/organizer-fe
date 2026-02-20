@@ -13,8 +13,32 @@ import { useOrganization } from "./organization";
 
 export const teamListQueryKey = ["organization", "teams"] as const;
 
+export const teamStatsQueryKey = ["organization", "teamStats"] as const;
+
 export type Team =
   inferRouterOutputs<AppRouter>["organization"]["listTeams"][number];
+
+export type TeamStats =
+  inferRouterOutputs<AppRouter>["organization"]["getTeamStats"];
+
+/**
+ * Fetches team statistics for the current org (total, active, new this month, and percentage deltas).
+ * Used to fill the stats cards on the teams page.
+ */
+export function useTeamStats() {
+  const { data: organizations } = useOrganization();
+  const currentOrg = organizations?.[0];
+  const organizationId = currentOrg?.id;
+
+  return useQuery({
+    queryKey: [...teamStatsQueryKey, organizationId ?? ""],
+    queryFn: () =>
+      trpcClient.organization.getTeamStats.query({
+        organizationId: organizationId!,
+      }),
+    enabled: Boolean(organizationId),
+  });
+}
 
 /**
  * Fetches teams for the given organization, optionally filtered by name (debounced search).
@@ -74,6 +98,9 @@ export function useDeleteTeam() {
       if (organizationId) {
         queryClient.invalidateQueries({
           queryKey: [...teamListQueryKey, organizationId],
+        });
+        queryClient.invalidateQueries({
+          queryKey: [...teamStatsQueryKey, organizationId],
         });
       }
       queryClient.removeQueries({ queryKey: teamBySlugQueryKey });
