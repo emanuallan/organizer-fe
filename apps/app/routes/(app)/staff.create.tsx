@@ -1,5 +1,6 @@
 import { getErrorMessage } from "@/lib/errors";
 import { useOrganization } from "@/lib/queries/organization";
+import { toast } from "@/lib/toast";
 import { STAFF_ROLES, type StaffRole, useAddStaff } from "@/lib/queries/staff";
 import {
   Button,
@@ -52,8 +53,16 @@ function CreateStaff() {
         role,
       },
       {
-        onSuccess: () => {
+        onSuccess: (data) => {
+          if (data.type === "member") {
+            toast.success("Staff member added");
+          } else {
+            toast.success("Invitation sent");
+          }
           router.navigate({ to: "/staff" });
+        },
+        onError: (error) => {
+          toast.error(getErrorMessage(error));
         },
       },
     );

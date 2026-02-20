@@ -1,5 +1,7 @@
+import { getErrorMessage } from "@/lib/errors";
 import { useDebouncedValue } from "@/lib/hooks/useDebouncedValue";
-import { useDeleteTeam, useTeamStats, useTeams } from "@/lib/queries/team";
+import { useDeleteTeam, useTeams, useTeamStats } from "@/lib/queries/team";
+import { toast } from "@/lib/toast";
 import {
   Avatar,
   AvatarFallback,
@@ -37,15 +39,13 @@ const TABLE_SKELETON_ROWS = 5;
 
 const SEARCH_DEBOUNCE_MS = 800;
 
-const TEAM_STATUS_STYLES: Record<
-  string,
-  { className: string; label: string }
-> = {
-  active: { className: "bg-green-100 text-green-700", label: "Active" },
-  inactive: { className: "bg-gray-100 text-gray-700", label: "Inactive" },
-  suspended: { className: "bg-amber-100 text-amber-700", label: "Suspended" },
-  banned: { className: "bg-red-100 text-red-700", label: "Banned" },
-};
+const TEAM_STATUS_STYLES: Record<string, { className: string; label: string }> =
+  {
+    active: { className: "bg-green-100 text-green-700", label: "Active" },
+    inactive: { className: "bg-gray-100 text-gray-700", label: "Inactive" },
+    suspended: { className: "bg-amber-100 text-amber-700", label: "Suspended" },
+    banned: { className: "bg-red-100 text-red-700", label: "Banned" },
+  };
 
 function getStatusStyle(status: string) {
   return (
@@ -72,7 +72,11 @@ function TeamsList() {
     if (!teamToDelete) return;
     deleteTeam.mutate(teamToDelete.id, {
       onSuccess: () => {
+        toast.success("Team deleted");
         setTeamToDelete(null);
+      },
+      onError: (error) => {
+        toast.error(getErrorMessage(error));
       },
     });
   };
@@ -109,7 +113,9 @@ function TeamsList() {
               </>
             ) : (
               <>
-                <div className="text-2xl font-bold">{stats?.totalTeams ?? 0}</div>
+                <div className="text-2xl font-bold">
+                  {stats?.totalTeams ?? 0}
+                </div>
                 <p className="text-xs text-muted-foreground">
                   {stats?.totalChangePercent !== undefined &&
                   stats.totalChangePercent !== 0

@@ -1,5 +1,7 @@
+import { getErrorMessage } from "@/lib/errors";
 import { useOrganization } from "@/lib/queries/organization";
 import { useCreateTeam } from "@/lib/queries/team";
+import { toast } from "@/lib/toast";
 import {
   Button,
   Card,
@@ -34,7 +36,11 @@ function CreateTeam() {
       { organizationId, name: name.trim() },
       {
         onSuccess: () => {
+          toast.success("Team created");
           router.navigate({ to: "/teams" });
+        },
+        onError: (error) => {
+          toast.error(getErrorMessage(error));
         },
       },
     );

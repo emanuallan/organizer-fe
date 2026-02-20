@@ -1,8 +1,16 @@
 import { auth } from "@/lib/auth";
-import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@repo/ui";
+import { toast } from "@/lib/toast";
+import {
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@repo/ui";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
 import { Loader2, MailCheck } from "lucide-react";
+import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/(app)/accept-invitation")({
   validateSearch: (search: Record<string, unknown>) => {
@@ -18,7 +26,9 @@ export const Route = createFileRoute("/(app)/accept-invitation")({
 function AcceptInvitationPage() {
   const { invitationId } = Route.useSearch();
   const router = useRouter();
-  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [status, setStatus] = useState<
+    "idle" | "loading" | "success" | "error"
+  >("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -29,15 +39,19 @@ function AcceptInvitationPage() {
       .then((result) => {
         if (result.error) {
           setStatus("error");
-          setErrorMessage(result.error.message ?? "Failed to accept invitation");
+          const msg = result.error.message ?? "Failed to accept invitation";
+          setErrorMessage(msg);
+          toast.error(msg);
           return;
         }
         setStatus("success");
+        toast.success("Invitation accepted");
         router.navigate({ to: "/staff" });
       })
       .catch(() => {
         setStatus("error");
         setErrorMessage("Something went wrong");
+        toast.error("Something went wrong");
       });
   }, [invitationId, status, router]);
 
@@ -48,7 +62,8 @@ function AcceptInvitationPage() {
           <CardHeader>
             <CardTitle>Invalid invitation</CardTitle>
             <CardDescription>
-              This invitation link is missing an invitation ID. Please use the link from your invitation email.
+              This invitation link is missing an invitation ID. Please use the
+              link from your invitation email.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -72,7 +87,8 @@ function AcceptInvitationPage() {
           <CardDescription>
             {status === "loading" && "Adding you to the organization…"}
             {status === "success" && "Accepted. Redirecting…"}
-            {status === "error" && (errorMessage ?? "Could not accept the invitation.")}
+            {status === "error" &&
+              (errorMessage ?? "Could not accept the invitation.")}
             {status === "idle" && "You will be added to the organization."}
           </CardDescription>
         </CardHeader>

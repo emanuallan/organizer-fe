@@ -2,6 +2,7 @@ import { AuthErrorBoundary } from "@/components/auth";
 import { Layout } from "@/components/layout";
 import { getCachedSession, sessionQueryOptions } from "@/lib/queries/session";
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { Toaster } from "sonner";
 
 export const Route = createFileRoute("/(app)")({
   // Route-level authentication guard using cache-first strategy.
@@ -32,6 +33,7 @@ function AppLayout() {
       <Layout>
         <Outlet />
       </Layout>
+      <Toaster richColors position="top-right" />
     </AuthErrorBoundary>
   );
 }
