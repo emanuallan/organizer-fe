@@ -1,4 +1,4 @@
-import { useTeams } from "@/lib/queries/team";
+import { useDeleteTeam, useTeams } from "@/lib/queries/team";
 import {
   Avatar,
   AvatarFallback,
@@ -8,6 +8,12 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
   Input,
   Skeleton,
 } from "@repo/ui";
@@ -15,9 +21,12 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   MoreVertical,
   Search,
+  Trash2,
   UserPlus,
   Users as UsersIcon,
+  Eye,
 } from "lucide-react";
+import { useState } from "react";
 
 export const Route = createFileRoute("/(app)/teams/")({
   component: TeamsList,
@@ -27,6 +36,21 @@ const TABLE_SKELETON_ROWS = 5;
 
 function TeamsList() {
   const { data: teams, isPending } = useTeams();
+  const deleteTeam = useDeleteTeam();
+  const [openMenuTeamId, setOpenMenuTeamId] = useState<string | null>(null);
+  const [teamToDelete, setTeamToDelete] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+
+  const handleDeleteConfirm = () => {
+    if (!teamToDelete) return;
+    deleteTeam.mutate(teamToDelete.id, {
+      onSuccess: () => {
+        setTeamToDelete(null);
+      },
+    });
+  };
 
   return (
     <div className="p-6 space-y-6">
@@ -202,9 +226,55 @@ function TeamsList() {
                             {new Date(team.updatedAt).toLocaleDateString()}
                           </td>
                           <td className="p-4">
-                            <Button variant="ghost" size="sm">
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
+                            <div className="relative">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() =>
+                                  setOpenMenuTeamId((id) =>
+                                    id === team.id ? null : team.id,
+                                  )
+                                }
+                                aria-haspopup="true"
+                                aria-expanded={openMenuTeamId === team.id}
+                              >
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                              {openMenuTeamId === team.id && (
+                                <>
+                                  <div
+                                    className="fixed inset-0 z-40"
+                                    aria-hidden
+                                    onClick={() => setOpenMenuTeamId(null)}
+                                  />
+                                  <div className="absolute right-0 top-full z-50 mt-1 min-w-32 rounded-md border bg-popover py-1 shadow-md">
+                                    <Link
+                                      to="/teams/$teamSlug"
+                                      params={{ teamSlug: team.slug }}
+                                      className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
+                                      onClick={() => setOpenMenuTeamId(null)}
+                                    >
+                                      <Eye className="h-4 w-4" />
+                                      View
+                                    </Link>
+                                    <button
+                                      type="button"
+                                      className="flex w-full items-center gap-2 px-3 py-2 text-sm text-destructive hover:bg-accent hover:text-accent-foreground"
+                                      onClick={() => {
+                                        setTeamToDelete({
+                                          id: team.id,
+                                          name: team.name,
+                                        });
+                                        setOpenMenuTeamId(null);
+                                      }}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                      Delete
+                                    </button>
+                                  </div>
+                                </>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -214,6 +284,36 @@ function TeamsList() {
           </div>
         </CardContent>
       </Card>
+
+      <Dialog
+        open={teamToDelete !== null}
+        onOpenChange={(open) => !open && setTeamToDelete(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete team</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete &quot;{teamToDelete?.name}&quot;?
+              This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setTeamToDelete(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteConfirm}
+              disabled={deleteTeam.isPending}
+            >
+              {deleteTeam.isPending ? "Deleting…" : "Confirm"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

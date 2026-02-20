@@ -46,6 +46,73 @@ export const organizationRouter = router({
         .where(eq(team.organizationId, input.organizationId));
     }),
 
+  /** Get a team by slug with members (players). User must be a member of the team's org. */
+  getTeamBySlug: protectedProcedure
+    .input(z.object({ slug: z.string().min(1) }))
+    .query(async ({ ctx, input }) => {
+      const found = await ctx.db.query.team.findFirst({
+        where: eq(team.slug, input.slug),
+        with: {
+          members: {
+            with: {
+              user: {
+                columns: { id: true, name: true, email: true },
+              },
+            },
+          },
+        },
+      });
+      if (!found) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Team not found",
+        });
+      }
+      const membership = await ctx.db.query.member.findFirst({
+        where: and(
+          eq(member.userId, ctx.user.id),
+          eq(member.organizationId, found.organizationId),
+        ),
+      });
+      if (!membership) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Not a member of this organization",
+        });
+      }
+      return found;
+    }),
+
+  /** Delete a team. User must be a member of the team's org. */
+  deleteTeam: protectedProcedure
+    .input(z.object({ teamId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const [found] = await ctx.db
+        .select()
+        .from(team)
+        .where(eq(team.id, input.teamId));
+      if (!found) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Team not found",
+        });
+      }
+      const membership = await ctx.db.query.member.findFirst({
+        where: and(
+          eq(member.userId, ctx.user.id),
+          eq(member.organizationId, found.organizationId),
+        ),
+      });
+      if (!membership) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Not a member of this organization",
+        });
+      }
+      await ctx.db.delete(team).where(eq(team.id, input.teamId));
+      return { success: true };
+    }),
+
   /** Create a team in an organization. User must be a member of the org. */
   createTeam: protectedProcedure
     .input(

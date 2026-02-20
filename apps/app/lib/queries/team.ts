@@ -35,6 +35,50 @@ export function useTeams() {
   });
 }
 
+export type TeamBySlug =
+  inferRouterOutputs<AppRouter>["organization"]["getTeamBySlug"];
+
+const teamBySlugQueryKey = ["organization", "teamBySlug"] as const;
+
+/**
+ * Fetches a single team by slug with members. For use on the team detail page.
+ */
+export function useTeamBySlug(slug: string | undefined) {
+  const { data: organizations } = useOrganization();
+  const currentOrg = organizations?.[0];
+  const organizationId = currentOrg?.id;
+
+  return useQuery({
+    queryKey: [...teamBySlugQueryKey, slug ?? ""],
+    queryFn: () =>
+      trpcClient.organization.getTeamBySlug.query({ slug: slug! }),
+    enabled: Boolean(slug && organizationId),
+  });
+}
+
+/**
+ * Deletes a team. Invalidates the team list on success.
+ */
+export function useDeleteTeam() {
+  const queryClient = useQueryClient();
+  const { data: organizations } = useOrganization();
+  const currentOrg = organizations?.[0];
+  const organizationId = currentOrg?.id;
+
+  return useMutation({
+    mutationFn: (teamId: string) =>
+      trpcClient.organization.deleteTeam.mutate({ teamId }),
+    onSuccess: () => {
+      if (organizationId) {
+        queryClient.invalidateQueries({
+          queryKey: [...teamListQueryKey, organizationId],
+        });
+      }
+      queryClient.removeQueries({ queryKey: teamBySlugQueryKey });
+    },
+  });
+}
+
 /**
  * Creates a team in the given organization. Invalidates the team list on success.
  */
