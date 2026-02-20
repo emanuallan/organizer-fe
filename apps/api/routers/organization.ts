@@ -1,6 +1,6 @@
 import { invitation, member, organization, team, user } from "@repo/db";
 import { TRPCError } from "@trpc/server";
-import { and, eq } from "drizzle-orm";
+import { and, eq, ilike } from "drizzle-orm";
 import { z } from "zod";
 import { sendOrganizationInvitation } from "../lib/email.js";
 import { protectedProcedure, router } from "../lib/trpc.js";
@@ -24,9 +24,14 @@ export const organizationRouter = router({
     return organizations;
   }),
 
-  /** List teams for an organization. User must be a member of the org. */
+  /** List teams for an organization. Optional search filters by team name (case-insensitive). User must be a member of the org. */
   listTeams: protectedProcedure
-    .input(z.object({ organizationId: z.string() }))
+    .input(
+      z.object({
+        organizationId: z.string(),
+        search: z.string().optional(),
+      }),
+    )
     .query(async ({ ctx, input }) => {
       const membership = await ctx.db.query.member.findFirst({
         where: and(
@@ -40,10 +45,18 @@ export const organizationRouter = router({
           message: "Not a member of this organization",
         });
       }
+      const searchTerm = input.search?.trim();
+      const nameCondition = searchTerm
+        ? ilike(team.name, `%${searchTerm}%`)
+        : undefined;
       return ctx.db
         .select()
         .from(team)
-        .where(eq(team.organizationId, input.organizationId));
+        .where(
+          nameCondition
+            ? and(eq(team.organizationId, input.organizationId), nameCondition)
+            : eq(team.organizationId, input.organizationId),
+        );
     }),
 
   /** Get a team by slug with members (players). User must be a member of the team's org. */

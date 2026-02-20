@@ -17,19 +17,21 @@ export type Team =
   inferRouterOutputs<AppRouter>["organization"]["listTeams"][number];
 
 /**
- * Fetches all teams for the given organization.
+ * Fetches teams for the given organization, optionally filtered by name (debounced search).
  * Automatically enabled when organizationId is set; requires the user to be a member of the org.
  */
-export function useTeams() {
+export function useTeams(search?: string) {
   const { data: organizations } = useOrganization();
   const currentOrg = organizations?.[0];
   const organizationId = currentOrg?.id;
+  const searchTerm = search?.trim() || undefined;
 
   return useQuery({
-    queryKey: [...teamListQueryKey, organizationId ?? ""],
+    queryKey: [...teamListQueryKey, organizationId ?? "", searchTerm ?? ""],
     queryFn: () =>
       trpcClient.organization.listTeams.query({
         organizationId: organizationId!,
+        ...(searchTerm ? { search: searchTerm } : {}),
       }),
     enabled: Boolean(organizationId),
   });

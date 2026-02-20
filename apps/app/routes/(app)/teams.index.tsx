@@ -1,3 +1,4 @@
+import { useDebouncedValue } from "@/lib/hooks/useDebouncedValue";
 import { useDeleteTeam, useTeams } from "@/lib/queries/team";
 import {
   Avatar,
@@ -19,12 +20,12 @@ import {
 } from "@repo/ui";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
+  Eye,
   MoreVertical,
   Search,
   Trash2,
   UserPlus,
   Users as UsersIcon,
-  Eye,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -34,8 +35,12 @@ export const Route = createFileRoute("/(app)/teams/")({
 
 const TABLE_SKELETON_ROWS = 5;
 
+const SEARCH_DEBOUNCE_MS = 800;
+
 function TeamsList() {
-  const { data: teams, isPending } = useTeams();
+  const [searchInput, setSearchInput] = useState("");
+  const debouncedSearch = useDebouncedValue(searchInput, SEARCH_DEBOUNCE_MS);
+  const { data: teams, isPending } = useTeams(debouncedSearch);
   const deleteTeam = useDeleteTeam();
   const [openMenuTeamId, setOpenMenuTeamId] = useState<string | null>(null);
   const [teamToDelete, setTeamToDelete] = useState<{
@@ -106,7 +111,9 @@ function TeamsList() {
             ) : (
               <>
                 <div className="text-2xl font-bold">{teams?.length}</div>
-                <p className="text-xs text-muted-foreground">72% of total teams</p>
+                <p className="text-xs text-muted-foreground">
+                  72% of total teams
+                </p>
               </>
             )}
           </CardContent>
@@ -147,9 +154,14 @@ function TeamsList() {
           <div className="flex gap-4 mb-6">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search teams..." className="pl-10" />
+              <Input
+                placeholder="Search teams..."
+                className="pl-10"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                aria-label="Search teams by name"
+              />
             </div>
-            <Button variant="outline">Filter</Button>
           </div>
 
           {/* Users Table */}
@@ -206,7 +218,9 @@ function TeamsList() {
                                 <p className="font-medium">{team.name}</p>
                                 <p className="text-sm text-muted-foreground">
                                   est.{" "}
-                                  {new Date(team.createdAt).toLocaleDateString()}
+                                  {new Date(
+                                    team.createdAt,
+                                  ).toLocaleDateString()}
                                 </p>
                               </div>
                             </div>
@@ -298,10 +312,7 @@ function TeamsList() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setTeamToDelete(null)}
-            >
+            <Button variant="outline" onClick={() => setTeamToDelete(null)}>
               Cancel
             </Button>
             <Button
