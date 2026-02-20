@@ -9,6 +9,7 @@ import {
   CardHeader,
   CardTitle,
   Input,
+  Skeleton,
 } from "@repo/ui";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
@@ -22,8 +23,10 @@ export const Route = createFileRoute("/(app)/staff/")({
   component: StaffList,
 });
 
+const TABLE_SKELETON_ROWS = 5;
+
 function StaffList() {
-  const { data } = useStaff();
+  const { data, isPending } = useStaff();
 
   return (
     <div className="p-6 space-y-6">
@@ -50,10 +53,19 @@ function StaffList() {
             <UsersIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{data?.length ?? 0}</div>
-            <p className="text-xs text-muted-foreground">
-              +10% from last month
-            </p>
+            {isPending ? (
+              <>
+                <Skeleton className="h-8 w-12 mb-2" />
+                <Skeleton className="h-3 w-28" />
+              </>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">{data?.length ?? 0}</div>
+                <p className="text-xs text-muted-foreground">
+                  +10% from last month
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
         <Card>
@@ -62,8 +74,17 @@ function StaffList() {
             <UsersIcon className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{data?.length ?? 0}</div>
-            <p className="text-xs text-muted-foreground">72% of total staff</p>
+            {isPending ? (
+              <>
+                <Skeleton className="h-8 w-12 mb-2" />
+                <Skeleton className="h-3 w-24" />
+              </>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">{data?.length ?? 0}</div>
+                <p className="text-xs text-muted-foreground">72% of total staff</p>
+              </>
+            )}
           </CardContent>
         </Card>
         <Card>
@@ -74,10 +95,19 @@ function StaffList() {
             <UserPlus className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">48</div>
-            <p className="text-xs text-muted-foreground">
-              +32% from last month
-            </p>
+            {isPending ? (
+              <>
+                <Skeleton className="h-8 w-12 mb-2" />
+                <Skeleton className="h-3 w-28" />
+              </>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">48</div>
+                <p className="text-xs text-muted-foreground">
+                  +32% from last month
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -112,52 +142,80 @@ function StaffList() {
                   </tr>
                 </thead>
                 <tbody>
-                  {data?.map((staff) => (
-                    <tr key={staff.user.id} className="border-b">
-                      <td className="p-4">
-                        <div className="flex items-center gap-3">
-                          <Avatar>
-                            <AvatarFallback>
-                              {staff.user.name
-                                .split(" ")
-                                .map((n) => n[0])
-                                .join("")}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-medium">{staff.user.name}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {staff.user.email}
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="p-4">
-                        <span className="px-2 py-1 text-xs font-medium rounded-full bg-secondary">
-                          {staff.role}
-                        </span>
-                      </td>
-                      <td className="p-4">
-                        <span
-                          className={`px-2 py-1 text-xs font-medium rounded-full ${
-                            "Active" === "Active"
-                              ? "bg-green-100 text-green-700"
-                              : "bg-gray-100 text-gray-700"
-                          }`}
-                        >
-                          {"Active"}
-                        </span>
-                      </td>
-                      <td className="p-4 text-sm text-muted-foreground">
-                        {new Date(staff.updatedAt).toLocaleDateString()}
-                      </td>
-                      <td className="p-4">
-                        <Button variant="ghost" size="sm">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
+                  {isPending
+                    ? Array.from({ length: TABLE_SKELETON_ROWS }).map(
+                        (_, i) => (
+                          <tr key={i} className="border-b">
+                            <td className="p-4">
+                              <div className="flex items-center gap-3">
+                                <Skeleton className="h-9 w-9 rounded-full" />
+                                <div className="space-y-2">
+                                  <Skeleton className="h-4 w-32" />
+                                  <Skeleton className="h-3 w-40" />
+                                </div>
+                              </div>
+                            </td>
+                            <td className="p-4">
+                              <Skeleton className="h-5 w-14 rounded-full" />
+                            </td>
+                            <td className="p-4">
+                              <Skeleton className="h-5 w-14 rounded-full" />
+                            </td>
+                            <td className="p-4">
+                              <Skeleton className="h-4 w-20" />
+                            </td>
+                            <td className="p-4">
+                              <Skeleton className="h-8 w-8 rounded-md" />
+                            </td>
+                          </tr>
+                        ),
+                      )
+                    : data?.map((staff) => (
+                        <tr key={staff.user.id} className="border-b">
+                          <td className="p-4">
+                            <div className="flex items-center gap-3">
+                              <Avatar>
+                                <AvatarFallback>
+                                  {staff.user.name
+                                    .split(" ")
+                                    .map((n) => n[0])
+                                    .join("")}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="font-medium">{staff.user.name}</p>
+                                <p className="text-sm text-muted-foreground">
+                                  {staff.user.email}
+                                </p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="p-4">
+                            <span className="px-2 py-1 text-xs font-medium rounded-full bg-secondary">
+                              {staff.role}
+                            </span>
+                          </td>
+                          <td className="p-4">
+                            <span
+                              className={`px-2 py-1 text-xs font-medium rounded-full ${
+                                "Active" === "Active"
+                                  ? "bg-green-100 text-green-700"
+                                  : "bg-gray-100 text-gray-700"
+                              }`}
+                            >
+                              {"Active"}
+                            </span>
+                          </td>
+                          <td className="p-4 text-sm text-muted-foreground">
+                            {new Date(staff.updatedAt).toLocaleDateString()}
+                          </td>
+                          <td className="p-4">
+                            <Button variant="ghost" size="sm">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
                 </tbody>
               </table>
             </div>
