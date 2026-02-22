@@ -13,7 +13,6 @@ import {
 } from "@repo/ui";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
-  MoreVertical,
   Search,
   UserPlus,
   Users as UsersIcon,
@@ -165,7 +164,10 @@ function StaffList() {
                               <Skeleton className="h-4 w-20" />
                             </td>
                             <td className="p-4">
-                              <Skeleton className="h-8 w-8 rounded-md" />
+                              <div className="flex gap-2">
+                                <Skeleton className="h-8 w-16 rounded-md" />
+                                <Skeleton className="h-8 w-14 rounded-md" />
+                              </div>
                             </td>
                           </tr>
                         ),
@@ -210,9 +212,19 @@ function StaffList() {
                             {new Date(staff.updatedAt).toLocaleDateString()}
                           </td>
                           <td className="p-4">
-                            <Button variant="ghost" size="sm">
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
+                            <div className="flex items-center gap-2">
+                              <Button variant="ghost" size="sm" disabled>
+                                View
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="cursor-pointer text-destructive hover:text-destructive"
+                                disabled
+                              >
+                                Delete
+                              </Button>
+                            </div>
                           </td>
                         </tr>
                       ))}

@@ -11,7 +11,6 @@ import {
 } from "@repo/ui";
 import { createFileRoute } from "@tanstack/react-router";
 import {
-  MoreVertical,
   Search,
   UserPlus,
   Users as UsersIcon,
@@ -194,9 +193,19 @@ function Players() {
                         {user.lastActive}
                       </td>
                       <td className="p-4">
-                        <Button variant="ghost" size="sm">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button variant="ghost" size="sm" disabled>
+                            View
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="cursor-pointer text-destructive hover:text-destructive"
+                            disabled
+                          >
+                            Delete
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))}

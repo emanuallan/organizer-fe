@@ -67,7 +67,7 @@ export type TeamBySlug =
 const teamBySlugQueryKey = ["organization", "teamBySlug"] as const;
 
 /**
- * Fetches a single team by slug with members. For use on the team detail page.
+ * Fetches a single team by slug with members (for current org's link). For use on the team detail page.
  */
 export function useTeamBySlug(slug: string | undefined) {
   const { data: organizations } = useOrganization();
@@ -75,15 +75,18 @@ export function useTeamBySlug(slug: string | undefined) {
   const organizationId = currentOrg?.id;
 
   return useQuery({
-    queryKey: [...teamBySlugQueryKey, slug ?? ""],
+    queryKey: [...teamBySlugQueryKey, slug ?? "", organizationId ?? ""],
     queryFn: () =>
-      trpcClient.organization.getTeamBySlug.query({ slug: slug! }),
+      trpcClient.organization.getTeamBySlug.query({
+        slug: slug!,
+        organizationId: organizationId!,
+      }),
     enabled: Boolean(slug && organizationId),
   });
 }
 
 /**
- * Deletes a team. Invalidates the team list on success.
+ * Deletes a team from the organization. Invalidates the team list on success.
  */
 export function useDeleteTeam() {
   const queryClient = useQueryClient();
@@ -92,17 +95,15 @@ export function useDeleteTeam() {
   const organizationId = currentOrg?.id;
 
   return useMutation({
-    mutationFn: (teamId: string) =>
-      trpcClient.organization.deleteTeam.mutate({ teamId }),
-    onSuccess: () => {
-      if (organizationId) {
-        queryClient.invalidateQueries({
-          queryKey: [...teamListQueryKey, organizationId],
-        });
-        queryClient.invalidateQueries({
-          queryKey: [...teamStatsQueryKey, organizationId],
-        });
-      }
+    mutationFn: (payload: { organizationId: string; teamId: string }) =>
+      trpcClient.organization.deleteTeam.mutate(payload),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: [...teamListQueryKey, variables.organizationId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [...teamStatsQueryKey, variables.organizationId],
+      });
       queryClient.removeQueries({ queryKey: teamBySlugQueryKey });
     },
   });

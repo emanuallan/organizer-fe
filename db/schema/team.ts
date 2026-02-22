@@ -1,13 +1,26 @@
-// Better Auth teams plugin tables
+// Teams belong to organizations; linked to leagues via league_team
 
 import { relations, sql } from "drizzle-orm";
-import { index, pgTable, text, timestamp, unique } from "drizzle-orm/pg-core";
+import {
+  index,
+  pgEnum,
+  pgTable,
+  text,
+  timestamp,
+  unique,
+} from "drizzle-orm/pg-core";
 import { organization } from "./organization";
 import { user } from "./user";
 
+export const teamStatusEnum = pgEnum("team_status", [
+  "active",
+  "inactive",
+  "banned",
+  "suspended",
+]);
+
 /**
- * Teams table for Better Auth teams plugin.
- * Teams belong to organizations and contain members.
+ * Teams table. Teams belong to an organization; link to leagues via league_team.
  */
 export const team = pgTable(
   "team",
@@ -20,15 +33,12 @@ export const team = pgTable(
       .notNull()
       .unique()
       .default(
-        sql`gen_random_string(7, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789')`,
-      ), // defaults to random uppercase letters and numbers of length 7
+        sql`upper(substr(replace((gen_random_uuid())::text, '-'::text, ''::text), 1, 7))`,
+      ),
     organizationId: text()
       .notNull()
       .references(() => organization.id, { onDelete: "cascade" }),
-    status: text()
-      .notNull()
-      .default("active")
-      .$type<"active" | "inactive" | "suspended" | "banned">(),
+    status: teamStatusEnum().default("inactive"),
     createdAt: timestamp({ withTimezone: true, mode: "date" })
       .defaultNow()
       .notNull(),
@@ -37,15 +47,24 @@ export const team = pgTable(
       .$onUpdate(() => new Date())
       .notNull(),
   },
-  (table) => [index("team_organization_id_idx").on(table.organizationId)],
+  (table) => [
+    index("team_organization_id_idx").on(table.organizationId),
+  ],
 );
 
 export type Team = typeof team.$inferSelect;
 export type NewTeam = typeof team.$inferInsert;
 
+export const playerStatusEnum = pgEnum("player_status", [
+  "active",
+  "inactive",
+  "banned",
+  "suspended",
+  "injured",
+]);
+
 /**
- * Team membership table for Better Auth teams plugin.
- * Links users to teams within organizations.
+ * Team membership table. Links users to teams with player status.
  */
 export const teamMember = pgTable(
   "team_member",
@@ -55,10 +74,13 @@ export const teamMember = pgTable(
       .default(sql`gen_random_uuid()`),
     teamId: text()
       .notNull()
+      .unique()
       .references(() => team.id, { onDelete: "cascade" }),
     userId: text()
       .notNull()
+      .unique()
       .references(() => user.id, { onDelete: "cascade" }),
+    status: playerStatusEnum().default("inactive").notNull(),
     createdAt: timestamp({ withTimezone: true, mode: "date" })
       .defaultNow()
       .notNull(),
@@ -78,7 +100,7 @@ export type TeamMember = typeof teamMember.$inferSelect;
 export type NewTeamMember = typeof teamMember.$inferInsert;
 
 // —————————————————————————————————————————————————————————————————————————————
-// Relations for better query experience
+// Relations
 // —————————————————————————————————————————————————————————————————————————————
 
 export const teamRelations = relations(team, ({ one, many }) => ({

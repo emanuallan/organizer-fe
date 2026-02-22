@@ -1,7 +1,11 @@
 import { getErrorMessage } from "@/lib/errors";
 import { useDebouncedValue } from "@/lib/hooks/useDebouncedValue";
 import { useOrganization } from "@/lib/queries/organization";
-import { useDeleteTeam, useTeams, useTeamStats } from "@/lib/queries/team";
+import {
+  useDeleteLeague,
+  useLeagueStats,
+  useLeagues,
+} from "@/lib/queries/league";
 import { toast } from "@/lib/toast";
 import {
   Avatar,
@@ -25,56 +29,38 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Search,
   UserPlus,
-  Users as UsersIcon,
+  Trophy,
 } from "lucide-react";
 import { useState } from "react";
 
-export const Route = createFileRoute("/(app)/teams/")({
-  component: TeamsList,
+export const Route = createFileRoute("/(app)/leagues/")({
+  component: LeaguesList,
 });
 
 const TABLE_SKELETON_ROWS = 5;
-
 const SEARCH_DEBOUNCE_MS = 800;
 
-const TEAM_STATUS_STYLES: Record<string, { className: string; label: string }> =
-  {
-    active: { className: "bg-green-100 text-green-700", label: "Active" },
-    inactive: { className: "bg-gray-100 text-gray-700", label: "Inactive" },
-    suspended: { className: "bg-amber-100 text-amber-700", label: "Suspended" },
-    banned: { className: "bg-red-100 text-red-700", label: "Banned" },
-  };
-
-function getStatusStyle(status: string) {
-  return (
-    TEAM_STATUS_STYLES[status] ?? {
-      className: "bg-muted text-muted-foreground",
-      label: status || "—",
-    }
-  );
-}
-
-function TeamsList() {
+function LeaguesList() {
   const { data: organizations } = useOrganization();
   const organizationId = organizations?.[0]?.id;
   const [searchInput, setSearchInput] = useState("");
   const debouncedSearch = useDebouncedValue(searchInput, SEARCH_DEBOUNCE_MS);
-  const { data: teams, isPending } = useTeams(debouncedSearch);
-  const { data: stats, isPending: isStatsPending } = useTeamStats();
-  const deleteTeam = useDeleteTeam();
-  const [teamToDelete, setTeamToDelete] = useState<{
+  const { data: leagues, isPending } = useLeagues(debouncedSearch);
+  const { data: stats, isPending: isStatsPending } = useLeagueStats();
+  const deleteLeague = useDeleteLeague();
+  const [leagueToDelete, setLeagueToDelete] = useState<{
     id: string;
     name: string;
   } | null>(null);
 
   const handleDeleteConfirm = () => {
-    if (!teamToDelete || !organizationId) return;
-    deleteTeam.mutate(
-      { organizationId, teamId: teamToDelete.id },
+    if (!leagueToDelete || !organizationId) return;
+    deleteLeague.mutate(
+      { organizationId, leagueId: leagueToDelete.id },
       {
         onSuccess: () => {
-          toast.success("Team removed from organization");
-          setTeamToDelete(null);
+          toast.success("League deleted");
+          setLeagueToDelete(null);
         },
         onError: (error) => {
           toast.error(getErrorMessage(error));
@@ -87,15 +73,15 @@ function TeamsList() {
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold">Teams</h2>
+          <h2 className="text-2xl font-bold">Leagues</h2>
           <p className="text-muted-foreground">
-            Manage teams and their members.
+            Manage leagues and their participating teams.
           </p>
         </div>
         <Button className="gap-2" asChild>
-          <Link to="/teams/create">
+          <Link to="/leagues/create">
             <UserPlus className="h-4 w-4" />
-            Add Team
+            Add League
           </Link>
         </Button>
       </div>
@@ -104,8 +90,8 @@ function TeamsList() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Teams</CardTitle>
-            <UsersIcon className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Total Leagues</CardTitle>
+            <Trophy className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             {isStatsPending ? (
@@ -116,7 +102,7 @@ function TeamsList() {
             ) : (
               <>
                 <div className="text-2xl font-bold">
-                  {stats?.totalTeams ?? 0}
+                  {stats?.totalLeagues ?? 0}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   {stats?.totalChangePercent !== undefined &&
@@ -130,8 +116,8 @@ function TeamsList() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Teams</CardTitle>
-            <UsersIcon className="h-4 w-4 text-green-600" />
+            <CardTitle className="text-sm font-medium">Active Leagues</CardTitle>
+            <Trophy className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
             {isStatsPending ? (
@@ -142,12 +128,10 @@ function TeamsList() {
             ) : (
               <>
                 <div className="text-2xl font-bold">
-                  {stats?.activeTeams ?? 0}
+                  {stats?.totalLeagues ?? 0}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {stats?.totalTeams != null && stats.totalTeams > 0
-                    ? `${stats?.activePercent ?? 0}% of total teams`
-                    : "No teams yet"}
+                  All leagues in organization
                 </p>
               </>
             )}
@@ -183,36 +167,32 @@ function TeamsList() {
         </Card>
       </div>
 
-      {/* User List */}
       <Card>
         <CardHeader>
-          <CardTitle>Team Management</CardTitle>
-          <CardDescription>View and manage all teams</CardDescription>
+          <CardTitle>League Management</CardTitle>
+          <CardDescription>View and manage all leagues</CardDescription>
         </CardHeader>
         <CardContent>
-          {/* Search Bar */}
           <div className="flex gap-4 mb-6">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search teams..."
+                placeholder="Search leagues..."
                 className="pl-10"
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                aria-label="Search teams by name"
+                aria-label="Search leagues by name"
               />
             </div>
           </div>
 
-          {/* Users Table */}
           <div className="border rounded-lg">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="border-b bg-muted/50">
-                    <th className="text-left p-4 font-medium">Team</th>
-                    <th className="text-left p-4 font-medium">Status</th>
-                    <th className="text-left p-4 font-medium">Last Active</th>
+                    <th className="text-left p-4 font-medium">League</th>
+                    <th className="text-left p-4 font-medium">Last updated</th>
                     <th className="text-left p-4 font-medium">Actions</th>
                   </tr>
                 </thead>
@@ -231,9 +211,6 @@ function TeamsList() {
                               </div>
                             </td>
                             <td className="p-4">
-                              <Skeleton className="h-5 w-14 rounded-full" />
-                            </td>
-                            <td className="p-4">
                               <Skeleton className="h-4 w-20" />
                             </td>
                             <td className="p-4">
@@ -245,52 +222,40 @@ function TeamsList() {
                           </tr>
                         ),
                       )
-                    : teams?.map((team) => (
-                        <tr key={team.id} className="border-b">
+                    : leagues?.map((league) => (
+                        <tr key={league.id} className="border-b">
                           <td className="p-4">
                             <div className="flex items-center gap-3">
                               <Avatar>
                                 <AvatarFallback>
-                                  {team.name
+                                  {league.name
                                     .split(" ")
                                     .map((n) => n[0])
                                     .join("")}
                                 </AvatarFallback>
                               </Avatar>
                               <div>
-                                <p className="font-medium">{team.name}</p>
+                                <p className="font-medium">{league.name}</p>
                                 <p className="text-sm text-muted-foreground">
                                   est.{" "}
                                   {new Date(
-                                    team.createdAt,
+                                    league.createdAt,
                                   ).toLocaleDateString()}
                                 </p>
                               </div>
                             </div>
                           </td>
-                          <td className="p-4">
-                            {(() => {
-                              const { className, label } = getStatusStyle(
-                                team.status ?? "active",
-                              );
-                              return (
-                                <span
-                                  className={`px-2 py-1 text-xs font-medium rounded-full capitalize ${className}`}
-                                >
-                                  {label}
-                                </span>
-                              );
-                            })()}
-                          </td>
                           <td className="p-4 text-sm text-muted-foreground">
-                            {new Date(team.updatedAt).toLocaleDateString()}
+                            {new Date(
+                              league.updatedAt,
+                            ).toLocaleDateString()}
                           </td>
                           <td className="p-4">
                             <div className="flex items-center gap-2">
                               <Button variant="ghost" size="sm" asChild>
                                 <Link
-                                  to="/teams/$teamSlug"
-                                  params={{ teamSlug: team.slug }}
+                                  to="/leagues/$leagueId"
+                                  params={{ leagueId: league.id }}
                                 >
                                   View
                                 </Link>
@@ -300,9 +265,9 @@ function TeamsList() {
                                 size="sm"
                                 className="cursor-pointer text-destructive hover:text-destructive"
                                 onClick={() =>
-                                  setTeamToDelete({
-                                    id: team.id,
-                                    name: team.name,
+                                  setLeagueToDelete({
+                                    id: league.id,
+                                    name: league.name,
                                   })
                                 }
                               >
@@ -320,27 +285,30 @@ function TeamsList() {
       </Card>
 
       <Dialog
-        open={teamToDelete !== null}
-        onOpenChange={(open) => !open && setTeamToDelete(null)}
+        open={leagueToDelete !== null}
+        onOpenChange={(open) => !open && setLeagueToDelete(null)}
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete team</DialogTitle>
+            <DialogTitle>Delete league</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete &quot;{teamToDelete?.name}&quot;?
+              Are you sure you want to delete &quot;{leagueToDelete?.name}&quot;?
               This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setTeamToDelete(null)}>
+            <Button
+              variant="outline"
+              onClick={() => setLeagueToDelete(null)}
+            >
               Cancel
             </Button>
             <Button
               variant="destructive"
               onClick={handleDeleteConfirm}
-              disabled={deleteTeam.isPending}
+              disabled={deleteLeague.isPending}
             >
-              {deleteTeam.isPending ? "Deleting…" : "Confirm"}
+              {deleteLeague.isPending ? "Deleting…" : "Confirm"}
             </Button>
           </DialogFooter>
         </DialogContent>
