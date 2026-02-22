@@ -9,7 +9,7 @@ import {
   user,
 } from "@repo/db";
 import { TRPCError } from "@trpc/server";
-import { and, count, eq, gte, ilike, lt, or } from "drizzle-orm";
+import { and, count, eq, gte, ilike, isNull, lt, or } from "drizzle-orm";
 import { z } from "zod";
 import { sendOrganizationInvitation } from "../lib/email.js";
 import { protectedProcedure, router } from "../lib/trpc.js";
@@ -419,6 +419,188 @@ export const organizationRouter = router({
         .innerJoin(team, eq(leagueTeam.teamId, team.id))
         .where(eq(leagueTeam.leagueId, input.leagueId));
       return { ...foundLeague, participatingTeams };
+    }),
+
+  /** List org teams that are not in this league (available to add to this league). User must be a member of the org. */
+  listTeamsAvailableForLeague: protectedProcedure
+    .input(
+      z.object({
+        organizationId: z.string(),
+        leagueId: z.string(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const membership = await ctx.db.query.member.findFirst({
+        where: and(
+          eq(member.userId, ctx.user.id),
+          eq(member.organizationId, input.organizationId),
+        ),
+      });
+      if (!membership) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Not a member of this organization",
+        });
+      }
+      return ctx.db
+        .select({
+          id: team.id,
+          name: team.name,
+          slug: team.slug,
+          status: team.status,
+        })
+        .from(team)
+        .leftJoin(
+          leagueTeam,
+          and(
+            eq(leagueTeam.teamId, team.id),
+            eq(leagueTeam.leagueId, input.leagueId),
+          ),
+        )
+        .where(
+          and(
+            eq(team.organizationId, input.organizationId),
+            isNull(leagueTeam.teamId),
+          ),
+        );
+    }),
+
+  /** Add a team to a league (insert league_team). Team must be in org and not already in this league. User must be a member of the org. */
+  addTeamToLeague: protectedProcedure
+    .input(
+      z.object({
+        organizationId: z.string(),
+        leagueId: z.string(),
+        teamId: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const membership = await ctx.db.query.member.findFirst({
+        where: and(
+          eq(member.userId, ctx.user.id),
+          eq(member.organizationId, input.organizationId),
+        ),
+      });
+      if (!membership) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Not a member of this organization",
+        });
+      }
+      const [leagueRow] = await ctx.db
+        .select({ id: league.id })
+        .from(league)
+        .where(
+          and(
+            eq(league.id, input.leagueId),
+            eq(league.organizationId, input.organizationId),
+          ),
+        );
+      if (!leagueRow) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "League not found",
+        });
+      }
+      const [teamRow] = await ctx.db
+        .select({ id: team.id })
+        .from(team)
+        .where(
+          and(
+            eq(team.id, input.teamId),
+            eq(team.organizationId, input.organizationId),
+          ),
+        );
+      if (!teamRow) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Team not found",
+        });
+      }
+      const [alreadyInThisLeague] = await ctx.db
+        .select({ id: leagueTeam.id })
+        .from(leagueTeam)
+        .where(
+          and(
+            eq(leagueTeam.leagueId, input.leagueId),
+            eq(leagueTeam.teamId, input.teamId),
+          ),
+        );
+      if (alreadyInThisLeague) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "This team is already in this league",
+        });
+      }
+      const [created] = await ctx.db
+        .insert(leagueTeam)
+        .values({
+          leagueId: input.leagueId,
+          teamId: input.teamId,
+        })
+        .returning();
+      if (!created) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to add team to league",
+        });
+      }
+      return created;
+    }),
+
+  /** Remove a team from a league (delete league_team row). User must be a member of the org. */
+  removeTeamFromLeague: protectedProcedure
+    .input(
+      z.object({
+        organizationId: z.string(),
+        leagueId: z.string(),
+        teamId: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const membership = await ctx.db.query.member.findFirst({
+        where: and(
+          eq(member.userId, ctx.user.id),
+          eq(member.organizationId, input.organizationId),
+        ),
+      });
+      if (!membership) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Not a member of this organization",
+        });
+      }
+      const [leagueRow] = await ctx.db
+        .select({ id: league.id })
+        .from(league)
+        .where(
+          and(
+            eq(league.id, input.leagueId),
+            eq(league.organizationId, input.organizationId),
+          ),
+        );
+      if (!leagueRow) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "League not found",
+        });
+      }
+      const deleted = await ctx.db
+        .delete(leagueTeam)
+        .where(
+          and(
+            eq(leagueTeam.leagueId, input.leagueId),
+            eq(leagueTeam.teamId, input.teamId),
+          ),
+        )
+        .returning({ id: leagueTeam.id });
+      if (deleted.length === 0) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Team is not in this league",
+        });
+      }
+      return { success: true };
     }),
 
   /** Delete a league. User must be a member of the org. Cascade deletes league_team rows. */

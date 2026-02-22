@@ -1,4 +1,8 @@
+import { getErrorMessage } from "@/lib/errors";
+import { useRemoveTeamFromLeague } from "@/lib/queries/league";
+import { useOrganization } from "@/lib/queries/organization";
 import { useTeamBySlug } from "@/lib/queries/team";
+import { toast } from "@/lib/toast";
 import {
   Avatar,
   AvatarFallback,
@@ -8,27 +12,74 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
   Skeleton,
 } from "@repo/ui";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { ArrowLeft, Users as UsersIcon } from "lucide-react";
+import { useState } from "react";
 
 export const Route = createFileRoute("/(app)/teams/$teamSlug")({
+  validateSearch: (search: Record<string, unknown>): { fromLeagueId?: string } => ({
+    fromLeagueId:
+      typeof search.fromLeagueId === "string" ? search.fromLeagueId : undefined,
+  }),
   component: TeamDetail,
 });
 
 function TeamDetail() {
+  const router = useRouter();
   const { teamSlug } = Route.useParams();
+  const { fromLeagueId } = Route.useSearch();
+  const { data: organizations } = useOrganization();
+  const organizationId = organizations?.[0]?.id;
   const { data: team, isPending, error } = useTeamBySlug(teamSlug);
+  const removeTeamFromLeague = useRemoveTeamFromLeague();
+  const [showRemoveFromLeagueConfirm, setShowRemoveFromLeagueConfirm] = useState(false);
+
+  const backToLeague = fromLeagueId != null;
+  const backLink = backToLeague ? (
+    <Link
+      to="/leagues/$leagueId"
+      params={{ leagueId: fromLeagueId }}
+      aria-label="Back to league"
+    >
+      <ArrowLeft className="h-4 w-4" />
+    </Link>
+  ) : (
+    <Link to="/teams" aria-label="Back to teams">
+      <ArrowLeft className="h-4 w-4" />
+    </Link>
+  );
+
+  const handleRemoveFromLeagueConfirm = () => {
+    if (!organizationId || !fromLeagueId || !team?.id) return;
+    removeTeamFromLeague.mutate(
+      { organizationId, leagueId: fromLeagueId, teamId: team.id },
+      {
+        onSuccess: () => {
+          toast.success("Team removed from league");
+          setShowRemoveFromLeagueConfirm(false);
+          router.navigate({ to: "/leagues/$leagueId", params: { leagueId: fromLeagueId } });
+        },
+        onError: (err) => {
+          toast.error(getErrorMessage(err));
+        },
+      },
+    );
+  };
 
   if (error) {
     return (
       <div className="p-6 space-y-6">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" asChild>
-            <Link to="/teams" aria-label="Back to teams">
-              <ArrowLeft className="h-4 w-4" />
-            </Link>
+            {backLink}
           </Button>
           <p className="text-destructive">
             {error.message ?? "Team not found"}
@@ -42,11 +93,9 @@ function TeamDetail() {
     <div className="p-6 space-y-6">
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" asChild>
-          <Link to="/teams" aria-label="Back to teams">
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
+          {backLink}
         </Button>
-        <div>
+        <div className="flex-1 min-w-0">
           {isPending ? (
             <>
               <Skeleton className="h-8 w-48 mb-2" />
@@ -59,6 +108,16 @@ function TeamDetail() {
             </>
           )}
         </div>
+        {fromLeagueId != null && team != null && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-destructive border-destructive/50 hover:bg-destructive/10 hover:text-destructive"
+            onClick={() => setShowRemoveFromLeagueConfirm(true)}
+          >
+            Remove from league
+          </Button>
+        )}
       </div>
 
       {isPending ? (
@@ -191,6 +250,29 @@ function TeamDetail() {
           </Card>
         </>
       ) : null}
+
+      <Dialog open={showRemoveFromLeagueConfirm} onOpenChange={setShowRemoveFromLeagueConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Remove team from league</DialogTitle>
+            <DialogDescription>
+              Remove {team?.name} from this league? The team will no longer participate in the league but will remain in your organization.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowRemoveFromLeagueConfirm(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleRemoveFromLeagueConfirm}
+              disabled={removeTeamFromLeague.isPending}
+            >
+              {removeTeamFromLeague.isPending ? "Removing…" : "Remove from league"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

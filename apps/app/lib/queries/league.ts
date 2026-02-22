@@ -103,3 +103,70 @@ export function useCreateLeague() {
     },
   });
 }
+
+export function useRemoveTeamFromLeague() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: {
+      organizationId: string;
+      leagueId: string;
+      teamId: string;
+    }) => trpcClient.organization.removeTeamFromLeague.mutate(input),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["organization", "leagueById"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [...leagueListQueryKey, variables.organizationId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["organization", "teamsAvailableForLeague", variables.leagueId],
+      });
+    },
+  });
+}
+
+export type TeamAvailableForLeague =
+  inferRouterOutputs<AppRouter>["organization"]["listTeamsAvailableForLeague"][number];
+
+export function useTeamsAvailableForLeague(leagueId: string | undefined) {
+  const { data: organizations } = useOrganization();
+  const organizationId = organizations?.[0]?.id;
+
+  return useQuery({
+    queryKey: [
+      "organization",
+      "teamsAvailableForLeague",
+      leagueId ?? "",
+      organizationId ?? "",
+    ],
+    queryFn: () =>
+      trpcClient.organization.listTeamsAvailableForLeague.query({
+        organizationId: organizationId!,
+        leagueId: leagueId!,
+      }),
+    enabled: Boolean(organizationId && leagueId),
+  });
+}
+
+export function useAddTeamToLeague() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: {
+      organizationId: string;
+      leagueId: string;
+      teamId: string;
+    }) => trpcClient.organization.addTeamToLeague.mutate(input),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["organization", "leagueById"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [...leagueListQueryKey, variables.organizationId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["organization", "teamsAvailableForLeague", variables.leagueId],
+      });
+    },
+  });
+}

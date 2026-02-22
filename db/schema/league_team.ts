@@ -1,5 +1,6 @@
 /**
- * Junction table linking leagues to teams. Each league can have one team; each team can be in one league (per schema UNIQUEs).
+ * Junction table linking leagues to teams. Many-to-many: a league has many teams, a team can be in many leagues.
+ * Composite unique (league_id, team_id) prevents the same team being added to the same league twice.
  */
 
 import { relations, sql } from "drizzle-orm";
@@ -21,11 +22,9 @@ export const leagueTeam = pgTable(
       .default(sql`gen_random_uuid()`),
     leagueId: text()
       .notNull()
-      .unique()
       .references(() => league.id, { onDelete: "cascade" }),
     teamId: text()
       .notNull()
-      .unique()
       .references(() => team.id, { onDelete: "cascade" }),
     createdAt: timestamp({ withTimezone: true, mode: "date" })
       .defaultNow()
