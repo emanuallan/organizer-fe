@@ -928,9 +928,14 @@ export const organizationRouter = router({
       return { success: true, id: input.id };
     }),
 
-  /** List staff (members) for an organization with user details. User must be a member of the org. */
+  /** List staff (members) for an organization with user details. Optional search by name/email. User must be a member of the org. */
   listStaff: protectedProcedure
-    .input(z.object({ organizationId: z.string() }))
+    .input(
+      z.object({
+        organizationId: z.string(),
+        search: z.string().optional(),
+      }),
+    )
     .query(async ({ ctx, input }) => {
       const membership = await ctx.db.query.member.findFirst({
         where: and(
@@ -944,14 +949,48 @@ export const organizationRouter = router({
           message: "Not a member of this organization",
         });
       }
-      return ctx.db.query.member.findMany({
-        where: eq(member.organizationId, input.organizationId),
-        with: {
-          user: {
-            columns: { id: true, name: true, email: true },
+      const searchTerm = input.search?.trim();
+      if (!searchTerm) {
+        return ctx.db.query.member.findMany({
+          where: eq(member.organizationId, input.organizationId),
+          with: {
+            user: {
+              columns: { id: true, name: true, email: true },
+            },
           },
-        },
-      });
+        });
+      }
+      const rows = await ctx.db
+        .select({
+          id: member.id,
+          userId: member.userId,
+          organizationId: member.organizationId,
+          role: member.role,
+          createdAt: member.createdAt,
+          updatedAt: member.updatedAt,
+          userName: user.name,
+          userEmail: user.email,
+        })
+        .from(member)
+        .innerJoin(user, eq(member.userId, user.id))
+        .where(
+          and(
+            eq(member.organizationId, input.organizationId),
+            or(
+              ilike(user.name, `%${searchTerm}%`),
+              ilike(user.email, `%${searchTerm}%`),
+            ),
+          ),
+        );
+      return rows.map((r) => ({
+        id: r.id,
+        userId: r.userId,
+        organizationId: r.organizationId,
+        role: r.role,
+        createdAt: r.createdAt,
+        updatedAt: r.updatedAt,
+        user: { id: r.userId, name: r.userName, email: r.userEmail },
+      }));
     }),
 
   /** Add staff: add existing user as member, or create invitation if no user. Role enum: admin | editor | viewer. */
@@ -1047,6 +1086,112 @@ export const organizationRouter = router({
         });
       }
       return { type: "invitation" as const, invitation: inv };
+    }),
+
+  /** Update a staff member's role. User must be a member of the org. */
+  updateStaff: protectedProcedure
+    .input(
+      z.object({
+        organizationId: z.string(),
+        memberId: z.string(),
+        role: z.enum(["admin", "editor", "viewer"]),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const membership = await ctx.db.query.member.findFirst({
+        where: and(
+          eq(member.userId, ctx.user.id),
+          eq(member.organizationId, input.organizationId),
+        ),
+      });
+      if (!membership) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Not a member of this organization",
+        });
+      }
+      const [target] = await ctx.db
+        .select({ id: member.id })
+        .from(member)
+        .where(
+          and(
+            eq(member.id, input.memberId),
+            eq(member.organizationId, input.organizationId),
+          ),
+        );
+      if (!target) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Staff member not found",
+        });
+      }
+      const [updated] = await ctx.db
+        .update(member)
+        .set({ role: input.role })
+        .where(eq(member.id, input.memberId))
+        .returning();
+      if (!updated) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to update staff",
+        });
+      }
+      return updated;
+    }),
+
+  /** Remove a staff member from the organization. User must be a member of the org. */
+  removeStaff: protectedProcedure
+    .input(
+      z.object({
+        organizationId: z.string(),
+        memberId: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const membership = await ctx.db.query.member.findFirst({
+        where: and(
+          eq(member.userId, ctx.user.id),
+          eq(member.organizationId, input.organizationId),
+        ),
+      });
+      if (!membership) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Not a member of this organization",
+        });
+      }
+      const [target] = await ctx.db
+        .select({ id: member.id, userId: member.userId })
+        .from(member)
+        .where(
+          and(
+            eq(member.id, input.memberId),
+            eq(member.organizationId, input.organizationId),
+          ),
+        );
+      if (!target) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Staff member not found",
+        });
+      }
+      if (target.userId === ctx.user.id) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "You cannot remove yourself; use a different account or ask another admin.",
+        });
+      }
+      const deleted = await ctx.db
+        .delete(member)
+        .where(eq(member.id, input.memberId))
+        .returning({ id: member.id });
+      if (deleted.length === 0) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to remove staff",
+        });
+      }
+      return { success: true };
     }),
 
   invite: protectedProcedure
