@@ -11,7 +11,7 @@ import {
   Skeleton,
 } from "@repo/ui";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, Trophy, Users as UsersIcon } from "lucide-react";
+import { ArrowLeft, Trophy } from "lucide-react";
 
 export const Route = createFileRoute("/(app)/leagues/$leagueId")({
   component: LeagueDetail,
@@ -87,7 +87,9 @@ function LeagueDetail() {
             </CardHeader>
             <CardContent className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">Name</p>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Name
+                </p>
                 <p className="font-medium">{league.name}</p>
               </div>
               <div className="space-y-1">
@@ -120,9 +122,7 @@ function LeagueDetail() {
           <Card>
             <CardHeader>
               <CardTitle>Teams participating</CardTitle>
-              <CardDescription>
-                Teams enrolled in this league
-              </CardDescription>
+              <CardDescription>Teams enrolled in this league</CardDescription>
             </CardHeader>
             <CardContent>
               {!league.participatingTeams?.length ? (
@@ -155,9 +155,9 @@ function LeagueDetail() {
                                 </Avatar>
                                 <div>
                                   <p className="font-medium">{t.name}</p>
-                                  <p className="text-sm text-muted-foreground font-mono">
-                                    {t.slug}
-                                  </p>
+                                  {/* <p className="text-sm text-muted-foreground font-mono">
+                                    {t.}
+                                  </p> */}
                                 </div>
                               </div>
                             </td>

@@ -38,12 +38,7 @@ import {
   Skeleton,
 } from "@repo/ui";
 import { createFileRoute } from "@tanstack/react-router";
-import {
-  Pencil,
-  Search,
-  UserPlus,
-  Users as UsersIcon,
-} from "lucide-react";
+import { Pencil, Search, UserPlus, Users as UsersIcon } from "lucide-react";
 import { useState } from "react";
 
 export const Route = createFileRoute("/(app)/players")({
@@ -212,7 +207,9 @@ function Players() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Players</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Active Players
+            </CardTitle>
             <UsersIcon className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
@@ -269,7 +266,9 @@ function Players() {
       <Card>
         <CardHeader>
           <CardTitle>Player Management</CardTitle>
-          <CardDescription>View and manage all players (team members)</CardDescription>
+          <CardDescription>
+            View and manage all players (team members)
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col sm:flex-row gap-4 mb-6">
@@ -283,10 +282,7 @@ function Players() {
                 aria-label="Search players"
               />
             </div>
-            <Select
-              value={teamFilterId}
-              onValueChange={setTeamFilterId}
-            >
+            <Select value={teamFilterId} onValueChange={setTeamFilterId}>
               <SelectTrigger className="w-full sm:w-[220px]">
                 <SelectValue placeholder="All teams" />
               </SelectTrigger>
@@ -309,122 +305,117 @@ function Players() {
                     <th className="text-left p-4 font-medium">Player</th>
                     <th className="text-left p-4 font-medium">Team</th>
                     <th className="text-left p-4 font-medium">Status</th>
-                    <th className="text-left p-4 font-medium">Updated</th>
+                    <th className="text-left p-4 font-medium">Joined</th>
                     <th className="text-left p-4 font-medium">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {isPending
-                    ? Array.from({ length: TABLE_SKELETON_ROWS }).map(
-                        (_, i) => (
-                          <tr key={i} className="border-b">
-                            <td className="p-4">
-                              <div className="flex items-center gap-3">
-                                <Skeleton className="h-9 w-9 rounded-full" />
-                                <div className="space-y-2">
-                                  <Skeleton className="h-4 w-32" />
-                                  <Skeleton className="h-3 w-40" />
-                                </div>
+                  {isPending ? (
+                    Array.from({ length: TABLE_SKELETON_ROWS }).map((_, i) => (
+                      <tr key={i} className="border-b">
+                        <td className="p-4">
+                          <div className="flex items-center gap-3">
+                            <Skeleton className="h-9 w-9 rounded-full" />
+                            <div className="space-y-2">
+                              <Skeleton className="h-4 w-32" />
+                              <Skeleton className="h-3 w-40" />
+                            </div>
+                          </div>
+                        </td>
+                        <td className="p-4">
+                          <Skeleton className="h-4 w-24" />
+                        </td>
+                        <td className="p-4">
+                          <Skeleton className="h-5 w-14 rounded-full" />
+                        </td>
+                        <td className="p-4">
+                          <Skeleton className="h-4 w-20" />
+                        </td>
+                        <td className="p-4">
+                          <div className="flex gap-2">
+                            <Skeleton className="h-8 w-16 rounded-md" />
+                            <Skeleton className="h-8 w-14 rounded-md" />
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (players?.length ?? 0) === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={5}
+                        className="p-8 text-center text-muted-foreground"
+                      >
+                        No players found. Add a player to a team to get started.
+                      </td>
+                    </tr>
+                  ) : (
+                    players?.map((player) => {
+                      const { className, label } = getStatusStyle(
+                        player.status ?? "inactive",
+                      );
+                      return (
+                        <tr key={player.id} className="border-b">
+                          <td className="p-4">
+                            <div className="flex items-center gap-3">
+                              <Avatar>
+                                <AvatarFallback>
+                                  {player.userName
+                                    ?.split(" ")
+                                    .map((n) => n[0])
+                                    .join("") ?? "?"}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="font-medium">
+                                  {player.userName ?? "—"}
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                  {player.userEmail ?? "—"}
+                                </p>
                               </div>
-                            </td>
-                            <td className="p-4">
-                              <Skeleton className="h-4 w-24" />
-                            </td>
-                            <td className="p-4">
-                              <Skeleton className="h-5 w-14 rounded-full" />
-                            </td>
-                            <td className="p-4">
-                              <Skeleton className="h-4 w-20" />
-                            </td>
-                            <td className="p-4">
-                              <div className="flex gap-2">
-                                <Skeleton className="h-8 w-16 rounded-md" />
-                                <Skeleton className="h-8 w-14 rounded-md" />
-                              </div>
-                            </td>
-                          </tr>
-                        ),
-                      )
-                    : (players?.length ?? 0) === 0
-                      ? (
-                          <tr>
-                            <td
-                              colSpan={5}
-                              className="p-8 text-center text-muted-foreground"
+                            </div>
+                          </td>
+                          <td className="p-4">
+                            <span className="text-sm">
+                              {player.teamName ?? "—"}
+                            </span>
+                          </td>
+                          <td className="p-4">
+                            <span
+                              className={`px-2 py-1 text-xs font-medium rounded-full capitalize ${className}`}
                             >
-                              No players found. Add a player to a team to get
-                              started.
-                            </td>
-                          </tr>
-                        )
-                      : players?.map((player) => {
-                          const { className, label } = getStatusStyle(
-                            player.status ?? "inactive",
-                          );
-                          return (
-                            <tr key={player.id} className="border-b">
-                              <td className="p-4">
-                                <div className="flex items-center gap-3">
-                                  <Avatar>
-                                    <AvatarFallback>
-                                      {player.userName
-                                        ?.split(" ")
-                                        .map((n) => n[0])
-                                        .join("") ?? "?"}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                  <div>
-                                    <p className="font-medium">
-                                      {player.userName ?? "—"}
-                                    </p>
-                                    <p className="text-sm text-muted-foreground">
-                                      {player.userEmail ?? "—"}
-                                    </p>
-                                  </div>
-                                </div>
-                              </td>
-                              <td className="p-4">
-                                <span className="text-sm">
-                                  {player.teamName ?? "—"}
-                                </span>
-                              </td>
-                              <td className="p-4">
-                                <span
-                                  className={`px-2 py-1 text-xs font-medium rounded-full capitalize ${className}`}
-                                >
-                                  {label}
-                                </span>
-                              </td>
-                              <td className="p-4 text-sm text-muted-foreground">
-                                {player.updatedAt
-                                  ? new Date(
-                                      player.updatedAt,
-                                    ).toLocaleDateString()
-                                  : "—"}
-                              </td>
-                              <td className="p-4">
-                                <div className="flex items-center gap-2">
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => handleEditOpen(player)}
-                                  >
-                                    <Pencil className="h-4 w-4 mr-1" />
-                                    Edit
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="cursor-pointer text-destructive hover:text-destructive"
-                                    onClick={() => setPlayerToRemove(player)}
-                                  >
-                                    Remove
-                                  </Button>
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })}
+                              {label}
+                            </span>
+                          </td>
+                          <td className="p-4 text-sm text-muted-foreground">
+                            {player.createdAt
+                              ? new Date(player.createdAt).toLocaleDateString()
+                              : "—"}
+                          </td>
+                          <td className="p-4">
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEditOpen(player)}
+                              >
+                                <Pencil className="h-4 w-4 mr-1" />
+                                Edit
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="cursor-pointer text-destructive hover:text-destructive"
+                                onClick={() => setPlayerToRemove(player)}
+                              >
+                                Remove
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
                 </tbody>
               </table>
             </div>
@@ -445,11 +436,7 @@ function Players() {
           <form onSubmit={handleAddSubmit} className="space-y-4">
             <div className="grid gap-2">
               <Label htmlFor="add-team">Team</Label>
-              <Select
-                value={addTeamId}
-                onValueChange={setAddTeamId}
-                required
-              >
+              <Select value={addTeamId} onValueChange={setAddTeamId} required>
                 <SelectTrigger id="add-team">
                   <SelectValue placeholder="Select team" />
                 </SelectTrigger>
@@ -516,7 +503,11 @@ function Players() {
           <DialogHeader>
             <DialogTitle>Edit player status</DialogTitle>
             <DialogDescription>
-              Update status for {editingPlayer?.userName ?? editingPlayer?.userEmail ?? "this player"}.
+              Update status for{" "}
+              {editingPlayer?.userName ??
+                editingPlayer?.userEmail ??
+                "this player"}
+              .
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleEditSubmit} className="space-y-4">
@@ -563,16 +554,16 @@ function Players() {
           <DialogHeader>
             <DialogTitle>Remove player</DialogTitle>
             <DialogDescription>
-              Remove {playerToRemove?.userName ?? playerToRemove?.userEmail ?? "this player"}{" "}
+              Remove{" "}
+              {playerToRemove?.userName ??
+                playerToRemove?.userEmail ??
+                "this player"}{" "}
               from {playerToRemove?.teamName ?? "the team"}? They can be added
               again later.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setPlayerToRemove(null)}
-            >
+            <Button variant="outline" onClick={() => setPlayerToRemove(null)}>
               Cancel
             </Button>
             <Button
