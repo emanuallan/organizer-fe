@@ -5,10 +5,11 @@ import {
   member,
   organization,
   team,
+  teamMember,
   user,
 } from "@repo/db";
 import { TRPCError } from "@trpc/server";
-import { and, count, eq, gte, ilike, lt } from "drizzle-orm";
+import { and, count, eq, gte, ilike, lt, or } from "drizzle-orm";
 import { z } from "zod";
 import { sendOrganizationInvitation } from "../lib/email.js";
 import { protectedProcedure, router } from "../lib/trpc.js";
@@ -528,6 +529,357 @@ export const organizationRouter = router({
         });
       }
       return createdTeam;
+    }),
+
+  // ——— Players (team members) ———
+
+  /** Player (team member) statistics for the org. User must be a member of the org. */
+  getPlayerStats: protectedProcedure
+    .input(z.object({ organizationId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const membership = await ctx.db.query.member.findFirst({
+        where: and(
+          eq(member.userId, ctx.user.id),
+          eq(member.organizationId, input.organizationId),
+        ),
+      });
+      if (!membership) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Not a member of this organization",
+        });
+      }
+      const now = new Date();
+      const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const startOfLastMonth = new Date(
+        now.getFullYear(),
+        now.getMonth() - 1,
+        1,
+      );
+
+      const baseWhere = and(
+        eq(team.organizationId, input.organizationId),
+      );
+
+      const [totalRow] = await ctx.db
+        .select({ value: count(teamMember.id) })
+        .from(teamMember)
+        .innerJoin(team, eq(teamMember.teamId, team.id))
+        .where(baseWhere);
+
+      const [totalLastMonthRow] = await ctx.db
+        .select({ value: count(teamMember.id) })
+        .from(teamMember)
+        .innerJoin(team, eq(teamMember.teamId, team.id))
+        .where(
+          and(baseWhere, lt(teamMember.createdAt, startOfThisMonth)),
+        );
+
+      const [activeRow] = await ctx.db
+        .select({ value: count(teamMember.id) })
+        .from(teamMember)
+        .innerJoin(team, eq(teamMember.teamId, team.id))
+        .where(
+          and(baseWhere, eq(teamMember.status, "active")),
+        );
+
+      const [newThisMonthRow] = await ctx.db
+        .select({ value: count(teamMember.id) })
+        .from(teamMember)
+        .innerJoin(team, eq(teamMember.teamId, team.id))
+        .where(
+          and(baseWhere, gte(teamMember.createdAt, startOfThisMonth)),
+        );
+
+      const [newLastMonthRow] = await ctx.db
+        .select({ value: count(teamMember.id) })
+        .from(teamMember)
+        .innerJoin(team, eq(teamMember.teamId, team.id))
+        .where(
+          and(
+            baseWhere,
+            gte(teamMember.createdAt, startOfLastMonth),
+            lt(teamMember.createdAt, startOfThisMonth),
+          ),
+        );
+
+      const totalPlayers = Number(totalRow?.value ?? 0);
+      const totalLastMonth = Number(totalLastMonthRow?.value ?? 0);
+      const activePlayers = Number(activeRow?.value ?? 0);
+      const newThisMonth = Number(newThisMonthRow?.value ?? 0);
+      const newLastMonth = Number(newLastMonthRow?.value ?? 0);
+
+      const totalChangePercent =
+        totalLastMonth > 0
+          ? Math.round(
+              ((totalPlayers - totalLastMonth) / totalLastMonth) * 100,
+            )
+          : totalPlayers > 0
+            ? 100
+            : 0;
+
+      const activePercent =
+        totalPlayers > 0
+          ? Math.round((activePlayers / totalPlayers) * 100)
+          : 0;
+
+      const newThisMonthChangePercent =
+        newLastMonth > 0
+          ? Math.round(
+              ((newThisMonth - newLastMonth) / newLastMonth) * 100,
+            )
+          : newThisMonth > 0
+            ? 100
+            : 0;
+
+      return {
+        totalPlayers,
+        totalChangePercent,
+        activePlayers,
+        activePercent,
+        newThisMonth,
+        newThisMonthChangePercent,
+      };
+    }),
+
+  /** List players (team members) for the org. Optional team filter and search by name/email. */
+  listPlayers: protectedProcedure
+    .input(
+      z.object({
+        organizationId: z.string(),
+        teamId: z.string().optional(),
+        search: z.string().optional(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const membership = await ctx.db.query.member.findFirst({
+        where: and(
+          eq(member.userId, ctx.user.id),
+          eq(member.organizationId, input.organizationId),
+        ),
+      });
+      if (!membership) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Not a member of this organization",
+        });
+      }
+      const searchTerm = input.search?.trim();
+      const nameOrEmailCondition = searchTerm
+        ? or(
+            ilike(user.name, `%${searchTerm}%`),
+            ilike(user.email, `%${searchTerm}%`),
+          )
+        : undefined;
+
+      const conditions = [
+        eq(team.organizationId, input.organizationId),
+        ...(input.teamId ? [eq(teamMember.teamId, input.teamId)] : []),
+        ...(nameOrEmailCondition ? [nameOrEmailCondition] : []),
+      ];
+
+      return ctx.db
+        .select({
+          id: teamMember.id,
+          teamId: teamMember.teamId,
+          userId: teamMember.userId,
+          status: teamMember.status,
+          createdAt: teamMember.createdAt,
+          updatedAt: teamMember.updatedAt,
+          teamName: team.name,
+          teamSlug: team.slug,
+          userName: user.name,
+          userEmail: user.email,
+        })
+        .from(teamMember)
+        .innerJoin(team, eq(teamMember.teamId, team.id))
+        .innerJoin(user, eq(teamMember.userId, user.id))
+        .where(and(...conditions));
+    }),
+
+  /** Add a player (add user to team). User must exist; team must belong to org. */
+  addPlayer: protectedProcedure
+    .input(
+      z.object({
+        organizationId: z.string(),
+        teamId: z.string(),
+        email: z.string().email("Invalid email"),
+        status: z
+          .enum(["active", "inactive", "banned", "suspended", "injured"])
+          .default("inactive"),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const membership = await ctx.db.query.member.findFirst({
+        where: and(
+          eq(member.userId, ctx.user.id),
+          eq(member.organizationId, input.organizationId),
+        ),
+      });
+      if (!membership) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Not a member of this organization",
+        });
+      }
+      const [teamRow] = await ctx.db
+        .select()
+        .from(team)
+        .where(
+          and(
+            eq(team.id, input.teamId),
+            eq(team.organizationId, input.organizationId),
+          ),
+        );
+      if (!teamRow) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Team not found",
+        });
+      }
+      const existingUser = await ctx.db.query.user.findFirst({
+        where: eq(user.email, input.email.toLowerCase().trim()),
+        columns: { id: true },
+      });
+      if (!existingUser) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "No user found with this email",
+        });
+      }
+      const alreadyInTeam = await ctx.db.query.teamMember.findFirst({
+        where: eq(teamMember.userId, existingUser.id),
+        columns: { id: true },
+      });
+      if (alreadyInTeam) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "This user is already assigned to a team",
+        });
+      }
+      const [created] = await ctx.db
+        .insert(teamMember)
+        .values({
+          teamId: input.teamId,
+          userId: existingUser.id,
+          status: input.status,
+        })
+        .returning();
+      if (!created) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to add player",
+        });
+      }
+      return created;
+    }),
+
+  /** Update a player's status. */
+  updatePlayer: protectedProcedure
+    .input(
+      z.object({
+        organizationId: z.string(),
+        playerId: z.string(),
+        status: z.enum([
+          "active",
+          "inactive",
+          "banned",
+          "suspended",
+          "injured",
+        ]),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const membership = await ctx.db.query.member.findFirst({
+        where: and(
+          eq(member.userId, ctx.user.id),
+          eq(member.organizationId, input.organizationId),
+        ),
+      });
+      if (!membership) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Not a member of this organization",
+        });
+      }
+      const [tm] = await ctx.db
+        .select({ teamId: teamMember.teamId })
+        .from(teamMember)
+        .innerJoin(team, eq(teamMember.teamId, team.id))
+        .where(
+          and(
+            eq(teamMember.id, input.playerId),
+            eq(team.organizationId, input.organizationId),
+          ),
+        );
+      if (!tm) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Player not found",
+        });
+      }
+      const [updated] = await ctx.db
+        .update(teamMember)
+        .set({ status: input.status })
+        .where(eq(teamMember.id, input.playerId))
+        .returning();
+      if (!updated) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to update player",
+        });
+      }
+      return updated;
+    }),
+
+  /** Remove a player from a team. */
+  removePlayer: protectedProcedure
+    .input(
+      z.object({
+        organizationId: z.string(),
+        playerId: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const membership = await ctx.db.query.member.findFirst({
+        where: and(
+          eq(member.userId, ctx.user.id),
+          eq(member.organizationId, input.organizationId),
+        ),
+      });
+      if (!membership) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Not a member of this organization",
+        });
+      }
+      const [tm] = await ctx.db
+        .select({ id: teamMember.id })
+        .from(teamMember)
+        .innerJoin(team, eq(teamMember.teamId, team.id))
+        .where(
+          and(
+            eq(teamMember.id, input.playerId),
+            eq(team.organizationId, input.organizationId),
+          ),
+        );
+      if (!tm) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Player not found",
+        });
+      }
+      const deleted = await ctx.db
+        .delete(teamMember)
+        .where(eq(teamMember.id, input.playerId))
+        .returning({ id: teamMember.id });
+      if (deleted.length === 0) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to remove player",
+        });
+      }
+      return { success: true };
     }),
 
   list: protectedProcedure.query(() => {
