@@ -8,52 +8,56 @@ const description = "Simple pricing for sports facility owners. Run leagues and 
 const plans = [
   {
     name: "Starter",
-    price: "Free",
-    period: "to try",
-    description: "Perfect for getting started or a single league",
+    price: "$0",
+    period: "forever",
+    subline: "1 league",
+    description: "Try Organizr with no credit card. One league, full features.",
     features: [
       "1 league",
       "Unlimited teams & players",
       "Scheduling & standings",
-      "Basic support",
+      "Email support",
       "All core features"
     ],
-    cta: "Get Started",
+    cta: "Get Started Free",
     href: "/#get-started",
-    variant: "default" as const
+    variant: "secondary" as const
   },
   {
     name: "Pro",
-    price: "TBD",
-    period: "per month",
-    description: "For facilities running multiple leagues",
+    price: "$30",
+    period: "month",
+    subline: "or $20/mo billed annually",
+    foundingBadge: true,
+    description: "Unlimited leagues. Built for small orgs, church leagues, and community programs.",
     popular: true,
     features: [
       "Unlimited leagues",
       "Payment collection (when available)",
       "Waiver collection (when available)",
-      "Priority support",
-      "Advanced reporting"
+      "Priority email support",
+      "Advanced reporting & exports"
     ],
-    cta: "Contact Us",
-    href: "mailto:hello@organizr.app?subject=Organizr Pro Plan",
+    cta: "Become a Founding Customer",
+    href: "/#get-started",
     variant: "default" as const
   },
   {
     name: "Enterprise",
     price: "Custom",
-    period: "contact us",
-    description: "For multi-location or large organizations",
+    period: "",
+    subline: "Multi-location & scale",
+    description: "Multiple facilities, custom needs, and white-glove support.",
     features: [
       "Everything in Pro",
-      "Multiple facilities",
-      "Custom integrations",
-      "Dedicated support",
-      "SLA options"
+      "Multiple facilities & locations",
+      "Custom integrations & API",
+      "Dedicated success manager",
+      "SLA & training"
     ],
     cta: "Contact Sales",
     href: "mailto:hello@organizr.app?subject=Organizr Enterprise",
-    variant: "default" as const
+    variant: "secondary" as const
   }
 ];
 ---
@@ -61,13 +65,23 @@ const plans = [
 <BaseLayout title={title} description={description}>
   <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-20">
     <!-- Hero Section -->
-    <div class="text-center mb-16">
+    <div class="text-center mb-12">
       <h1 class="text-4xl font-bold tracking-tight mb-6">
         Simple, Transparent Pricing
       </h1>
       <p class="text-xl text-muted-foreground max-w-3xl mx-auto">
-        Start free and scale as you grow. Pricing designed for sports facility
-        owners and league operators.
+        One price for unlimited leagues. No per-team or per-player fees—built for
+        small leagues, church leagues, and community programs.
+      </p>
+    </div>
+
+    <!-- Founding Customer Offer -->
+    <div class="max-w-2xl mx-auto mb-12 p-4 rounded-lg border-2 border-primary/30 bg-primary/5 text-center">
+      <p class="text-sm font-semibold text-primary uppercase tracking-wide mb-1">
+        Founding Customer Offer — Limited Time
+      </p>
+      <p class="text-muted-foreground text-sm">
+        Lock in <strong class="text-foreground">$30/mo</strong> or <strong class="text-foreground">$20/mo when billed annually</strong> for Pro. Available to the <strong class="text-foreground">first 10 customers</strong> who join us early. You're taking a chance on a startup—we're making it worth it.
       </p>
     </div>
 
@@ -78,7 +92,7 @@ const plans = [
           {plan.popular && (
             <div class="absolute -top-3 left-1/2 -translate-x-1/2">
               <span class="bg-primary text-primary-foreground text-xs font-semibold px-3 py-1 rounded-full">
-                MOST POPULAR
+                FOUNDING PRICING
               </span>
             </div>
           )}
@@ -87,8 +101,14 @@ const plans = [
             <CardDescription>{plan.description}</CardDescription>
             <div class="mt-4">
               <span class="text-4xl font-bold">{plan.price}</span>
-              <span class="text-muted-foreground ml-2">/{plan.period}</span>
+              {plan.period && <span class="text-muted-foreground ml-2">/{plan.period}</span>}
             </div>
+            {plan.subline && (
+              <p class="text-sm text-muted-foreground mt-1">{plan.subline}</p>
+            )}
+            {plan.foundingBadge && (
+              <p class="text-xs text-muted-foreground mt-2">First 10 customers only · limited time</p>
+            )}
           </CardHeader>
           <CardContent>
             <ul class="space-y-3 mb-6">
@@ -139,9 +159,22 @@ const plans = [
           </CardHeader>
           <CardContent>
             <p class="text-sm text-muted-foreground">
-              Yes. The Starter plan lets you run one league with unlimited teams and
-              players, full scheduling, and core features so you can try Organizr
-              with no commitment.
+              Yes. Starter is free forever—one league, unlimited teams and players,
+              full scheduling, and core features. No credit card required to start.
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card client:visible>
+          <CardHeader>
+            <CardTitle className="text-lg">What's included in Pro?</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p class="text-sm text-muted-foreground">
+              Pro is $30/month (or $20/month when billed annually) for our founding
+              customers—the first 10 to sign up. You get unlimited leagues, payment
+              and waiver collection when available, priority support, and advanced
+              reporting. No per-team or per-player fees.
             </p>
           </CardContent>
         </Card>
@@ -152,21 +185,21 @@ const plans = [
           </CardHeader>
           <CardContent>
             <p class="text-sm text-muted-foreground">
-              Payment collection and digital waiver collection are coming soon and
-              will be included in the Pro plan. Contact us if you want early access
-              or updates.
+              Payment and digital waiver collection are coming soon and will be
+              included in Pro at no extra cost. Contact us if you want early access.
             </p>
           </CardContent>
         </Card>
 
         <Card client:visible>
           <CardHeader>
-            <CardTitle className="text-lg">Can I upgrade later?</CardTitle>
+            <CardTitle className="text-lg">Can I upgrade or change plans later?</CardTitle>
           </CardHeader>
           <CardContent>
             <p class="text-sm text-muted-foreground">
-              Absolutely. Start with the free plan and move to Pro or Enterprise
-              when you need more leagues, payments, or support.
+              Yes. Start free, upgrade to Pro when you need more leagues or payments.
+              You can switch to annual billing anytime to save. Enterprise is for
+              multi-location or custom needs—we'll work with you on pricing.
             </p>
           </CardContent>
         </Card>
@@ -177,8 +210,8 @@ const plans = [
           </CardHeader>
           <CardContent>
             <p class="text-sm text-muted-foreground">
-              Yes. The Enterprise plan is built for operators with multiple
-              locations. Contact us to discuss your setup and custom needs.
+              Yes. Enterprise is built for operators with multiple locations, custom
+              integrations, and dedicated support. Contact sales for a quote.
             </p>
           </CardContent>
         </Card>
@@ -191,7 +224,8 @@ const plans = [
         Ready to Run Better Leagues?
       </h2>
       <p class="text-muted-foreground text-lg mb-8 max-w-2xl mx-auto">
-        Start with the free plan and upgrade when you're ready for more.
+        Start free, or lock in founding pricing ($30/mo or $20/mo annually) while
+        the first 10 spots are open.
       </p>
 
       <div class="flex flex-col sm:flex-row gap-4 justify-center">
