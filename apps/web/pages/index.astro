@@ -1,44 +1,38 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from '@repo/ui';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@repo/ui';
 
 const features = [
   {
-    title: "⚡ Lightning Fast",
-    description: "SSR at CDN edge locations with ~100 Lighthouse scores",
-    content: "Optimized for Cloudflare Workers with Bun runtime for maximum performance."
+    title: "League & Team Management",
+    description: "Create leagues, divisions, and teams in minutes",
+    content: "Set up seasons, roster caps, and divisions. Drag-and-drop team builder and bulk imports so you spend less time on admin and more on the game."
   },
   {
-    title: "🎨 Modern UI",
-    description: "Beautiful components with ShadCN UI and Tailwind CSS",
-    content: "Pre-built components following modern design principles and accessibility standards."
+    title: "Player Management",
+    description: "Rosters, waivers, and contact info in one place",
+    content: "Register players, track waivers (coming soon), and keep contact details organized. Export rosters and share with coaches and staff."
   },
   {
-    title: "🚀 Developer Experience",
-    description: "TypeScript, hot reload, and excellent tooling",
-    content: "Full TypeScript support with Vite, TanStack Router, and modern development tools."
+    title: "Easy Scheduling",
+    description: "Build schedules that work for your facility",
+    content: "Generate balanced schedules, avoid conflicts, and publish to teams. Support for round-robin, brackets, and custom formats."
   },
   {
-    title: "📱 Full-Stack",
-    description: "tRPC API with PostgreSQL and authentication",
-    content: "Complete backend solution with type-safe APIs and database integration."
+    title: "Payment Collection",
+    description: "Collect fees and league dues online (coming soon)",
+    content: "Accept registration fees and league payments securely. Reduce no-shows and chase fewer checks—everything in one dashboard."
   },
   {
-    title: "🔧 Configurable",
-    description: "Monorepo structure with workspace management",
-    content: "Organized codebase with separate app, API, edge, and database workspaces."
+    title: "Waiver Collection",
+    description: "Digital waivers and compliance (coming soon)",
+    content: "Send and collect waivers electronically. Stay compliant and keep signed waivers on file without paper or chasing parents."
   },
   {
-    title: "☁️ Serverless Ready",
-    description: "Deploy to edge locations worldwide",
-    content: "Built for Cloudflare Workers with global distribution and automatic scaling."
+    title: "Built for Facilities",
+    description: "Designed for courts, rinks, and fields",
+    content: "Whether you run youth leagues, adult rec, or tournaments—Organizr scales from a single league to multiple sports and locations."
   }
-];
-
-const technologies = [
-  "React 19", "TypeScript", "Astro", "TanStack Router", 
-  "ShadCN UI", "Tailwind CSS", "Bun", "Hono", 
-  "tRPC", "PostgreSQL", "Cloudflare", "Jotai"
 ];
 ---
 
@@ -47,46 +41,40 @@ const technologies = [
   <section class="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-background to-muted/20">
     <div class="container mx-auto text-center">
       <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
-        React Starter Kit
+        Run Your Leagues. Manage Your Facility.
       </h1>
       <p class="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
-        Modern full-stack web application template optimized for serverless
-        deployment to CDN edge locations. Built with React, TypeScript, and
-        the latest web technologies.
+        Organizr makes creating and running sports leagues easy. Player, league, and team
+        management, scheduling, and more—built for sports facility owners who want to
+        spend less time on spreadsheets and more time on the game.
       </p>
-      <div class="flex flex-col sm:flex-row gap-4 justify-center">
-        <Button size="lg" asChild client:visible>
-          <a
-            href="https://github.com/kriasoft/react-starter-kit"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Get Started
-          </a>
-        </Button>
-        <Button variant="outline" size="lg" asChild client:visible>
-          <a
-            href="https://github.com/kriasoft/react-starter-kit"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            View on GitHub
-          </a>
-        </Button>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center" id="get-started">
+        <a
+          href="/#features"
+          class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring h-10 px-8 bg-primary text-primary-foreground shadow hover:bg-primary/90"
+        >
+          See Features
+        </a>
+        <a
+          href="/pricing"
+          class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring h-10 px-8 bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80"
+        >
+          View Pricing
+        </a>
       </div>
     </div>
   </section>
 
   <!-- Features Section -->
-  <section class="py-20 px-4 sm:px-6 lg:px-8">
+  <section class="py-20 px-4 sm:px-6 lg:px-8" id="features">
     <div class="container mx-auto">
       <div class="text-center mb-16">
         <h2 class="text-3xl font-bold tracking-tight mb-4">
-          Everything you need to build modern web apps
+          Everything you need to run great leagues
         </h2>
         <p class="text-muted-foreground text-lg max-w-2xl mx-auto">
-          React Starter Kit provides a solid foundation with best practices,
-          modern tooling, and optimized performance out of the box.
+          From registration to schedules to (soon) payments and waivers—Organizr gives
+          facility owners one place to manage it all.
         </p>
       </div>
 
@@ -106,20 +94,21 @@ const technologies = [
     </div>
   </section>
 
-  <!-- Tech Stack Section -->
+  <!-- Who it's for -->
   <section class="py-20 px-4 sm:px-6 lg:px-8 bg-muted/20">
     <div class="container mx-auto text-center">
       <h2 class="text-3xl font-bold tracking-tight mb-4">
-        Built with Modern Technologies
+        Built for Sports Facility Owners
       </h2>
       <p class="text-muted-foreground text-lg mb-12 max-w-2xl mx-auto">
-        Carefully selected technologies that work together seamlessly
+        Recreation centers, rinks, courts, and leagues—if you run sports programs,
+        Organizr helps you stay organized and save time.
       </p>
 
-      <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-8">
-        {technologies.map((tech) => (
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-3xl mx-auto">
+        {["Youth leagues", "Adult rec", "Tournaments", "Multi-sport"].map((item) => (
           <div class="p-4 rounded-lg bg-background border">
-            <span class="font-medium">{tech}</span>
+            <span class="font-medium">{item}</span>
           </div>
         ))}
       </div>
@@ -130,32 +119,25 @@ const technologies = [
   <section class="py-20 px-4 sm:px-6 lg:px-8">
     <div class="container mx-auto text-center">
       <h2 class="text-3xl font-bold tracking-tight mb-4">
-        Ready to start building?
+        Ready to simplify your leagues?
       </h2>
       <p class="text-muted-foreground text-lg mb-8 max-w-2xl mx-auto">
-        Get started with React Starter Kit today and build your next project
-        with confidence.
+        See pricing and start running your facility with less hassle.
       </p>
 
       <div class="flex flex-col sm:flex-row gap-4 justify-center">
-        <Button size="lg" asChild client:visible>
-          <a
-            href="https://github.com/kriasoft/react-starter-kit"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Clone Repository
-          </a>
-        </Button>
-        <Button variant="outline" size="lg" asChild client:visible>
-          <a
-            href="https://github.com/kriasoft/react-starter-kit#readme"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read Documentation
-          </a>
-        </Button>
+        <a
+          href="/pricing"
+          class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring h-10 px-8 bg-primary text-primary-foreground shadow hover:bg-primary/90"
+        >
+          View Pricing
+        </a>
+        <a
+          href="/features"
+          class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring h-10 px-8 bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80"
+        >
+          Explore Features
+        </a>
       </div>
     </div>
   </section>

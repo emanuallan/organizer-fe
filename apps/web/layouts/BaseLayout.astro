@@ -8,8 +8,8 @@ export interface Props {
 }
 
 const { 
-  title = 'React Starter Kit - Modern Full-Stack Web Application', 
-  description = 'Modern full-stack web application template optimized for serverless deployment to CDN edge locations. Built with React, TypeScript, and the latest web technologies.',
+  title = 'Organizr - Sports League Management Made Easy', 
+  description = 'Create and run sports leagues with ease. Player, league, and team management, scheduling, and more—built for sports facility owners.',
   image = '/og-image.png'
 } = Astro.props;
 ---
@@ -49,7 +49,7 @@ const {
           <div class="flex h-16 items-center justify-between">
             <div class="flex items-center space-x-4">
               <a href="/" class="text-xl font-bold text-primary">
-                React Starter Kit
+                Organizr
               </a>
             </div>
             <nav class="hidden md:flex items-center space-x-6">
@@ -67,17 +67,15 @@ const {
               </a>
             </nav>
             <div class="flex items-center space-x-2">
-              <a 
-                href="https://github.com/kriasoft/react-starter-kit" 
-                target="_blank"
-                rel="noopener noreferrer"
-                class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-8 rounded-md px-3"
+              <a
+                href="/#features"
+                class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring h-8 px-3 bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80"
               >
-                GitHub
+                See Features
               </a>
-              <a 
-                href="https://github.com/kriasoft/react-starter-kit"
-                class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground shadow hover:bg-primary/90 h-8 px-3"
+              <a
+                href="/#get-started"
+                class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring h-8 px-3 bg-primary text-primary-foreground shadow hover:bg-primary/90"
               >
                 Get Started
               </a>
@@ -96,48 +94,43 @@ const {
         <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div class="space-y-3">
-              <h3 class="font-semibold">React Starter Kit</h3>
+              <h3 class="font-semibold">Organizr</h3>
               <p class="text-sm text-muted-foreground">
-                Modern full-stack web application template optimized for
-                serverless deployment.
+                Sports league management made easy. Built for facility owners
+                who run leagues, teams, and events.
               </p>
             </div>
             <div class="space-y-3">
-              <h4 class="font-medium">Resources</h4>
+              <h4 class="font-medium">Product</h4>
               <ul class="space-y-2 text-sm text-muted-foreground">
                 <li>
-                  <a href="/docs" class="hover:text-foreground transition-colors">
-                    Documentation
+                  <a href="/features" class="hover:text-foreground transition-colors">
+                    Features
                   </a>
                 </li>
                 <li>
-                  <a href="/examples" class="hover:text-foreground transition-colors">
-                    Examples
+                  <a href="/pricing" class="hover:text-foreground transition-colors">
+                    Pricing
                   </a>
                 </li>
                 <li>
-                  <a href="/templates" class="hover:text-foreground transition-colors">
-                    Templates
+                  <a href="/about" class="hover:text-foreground transition-colors">
+                    About
                   </a>
                 </li>
               </ul>
             </div>
             <div class="space-y-3">
-              <h4 class="font-medium">Community</h4>
+              <h4 class="font-medium">Support</h4>
               <ul class="space-y-2 text-sm text-muted-foreground">
                 <li>
-                  <a href="https://github.com/kriasoft/react-starter-kit" class="hover:text-foreground transition-colors">
-                    GitHub
+                  <a href="/about#contact" class="hover:text-foreground transition-colors">
+                    Contact
                   </a>
                 </li>
                 <li>
-                  <a href="https://discord.gg/kriasoft" class="hover:text-foreground transition-colors">
-                    Discord
-                  </a>
-                </li>
-                <li>
-                  <a href="https://twitter.com/kriasoft" class="hover:text-foreground transition-colors">
-                    Twitter
+                  <a href="/pricing#faq" class="hover:text-foreground transition-colors">
+                    FAQ
                   </a>
                 </li>
               </ul>
@@ -155,21 +148,16 @@ const {
                     Terms
                   </a>
                 </li>
-                <li>
-                  <a href="https://github.com/kriasoft/react-starter-kit/blob/main/LICENSE" class="hover:text-foreground transition-colors">
-                    License
-                  </a>
-                </li>
               </ul>
             </div>
           </div>
           <div class="border-t mt-6 pt-6">
             <div class="flex flex-col sm:flex-row justify-between items-center">
               <p class="text-sm text-muted-foreground">
-                © 2024 Kriasoft. All rights reserved.
+                © {new Date().getFullYear()} Organizr. All rights reserved.
               </p>
               <p class="text-sm text-muted-foreground">
-                Built with Astro, React, TypeScript, and Tailwind CSS
+                Run your leagues. Manage your facility. Keep it simple.
               </p>
             </div>
           </div>

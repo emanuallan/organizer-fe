@@ -1,9 +1,9 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Separator } from '@repo/ui';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Separator } from '@repo/ui';
 
-const title = "About - React Starter Kit";
-const description = "Learn about React Starter Kit, a production-ready full-stack web application template built with modern technologies.";
+const title = "About - Organizr";
+const description = "Learn about Organizr—sports league management built for facility owners who want to run great leagues with less hassle.";
 ---
 
 <BaseLayout title={title} description={description}>
@@ -11,12 +11,11 @@ const description = "Learn about React Starter Kit, a production-ready full-stac
     <!-- Hero Section -->
     <div class="text-center mb-16">
       <h1 class="text-4xl font-bold tracking-tight mb-6">
-        About React Starter Kit
+        About Organizr
       </h1>
       <p class="text-xl text-muted-foreground max-w-3xl mx-auto">
-        A production-ready, full-stack web application template that combines
-        modern development practices with cutting-edge technologies to deliver
-        exceptional performance and developer experience.
+        We build software that makes creating and running sports leagues easy—so
+        facility owners can focus on what matters: great programs and happy players.
       </p>
     </div>
 
@@ -26,20 +25,20 @@ const description = "Learn about React Starter Kit, a production-ready full-stac
         <CardHeader>
           <CardTitle className="text-2xl">Our Mission</CardTitle>
           <CardDescription>
-            Empowering developers to build faster, better web applications
+            Give every league operator the tools to run like a pro
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <p class="text-muted-foreground">
-            React Starter Kit was created to bridge the gap between prototype
-            and production. We believe that developers should focus on
-            building great features, not wrestling with configuration and
-            setup.
+            Running a sports league means juggling rosters, schedules, payments, and
+            waivers—often with spreadsheets and email. Organizr puts everything in
+            one place: leagues, teams, players, and scheduling, with payment and
+            waiver collection coming soon.
           </p>
           <p class="text-muted-foreground">
-            Our template provides a solid foundation with best practices,
-            modern tooling, and optimized performance out of the box, so you
-            can ship your ideas faster and with confidence.
+            We're built for sports facility owners—recreation centers, rinks, courts,
+            and leagues—who want to spend less time on admin and more time on the
+            game.
           </p>
         </CardContent>
       </Card>
@@ -48,176 +47,101 @@ const description = "Learn about React Starter Kit, a production-ready full-stac
     <!-- Key Features -->
     <section class="mb-20">
       <h2 class="text-3xl font-bold tracking-tight mb-8 text-center">
-        What Makes Us Different
+        What Makes Organizr Different
       </h2>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
         <Card client:visible>
           <CardHeader>
-            <CardTitle>🎯 Production-Ready</CardTitle>
+            <CardTitle>🏟️ Built for Facilities</CardTitle>
             <CardDescription>
-              Not just a demo, but a real foundation for your applications
+              Designed for the way league operators actually work
             </CardDescription>
           </CardHeader>
           <CardContent>
             <p class="text-sm text-muted-foreground">
-              Every component, pattern, and configuration has been
-              battle-tested in production environments. Security, performance,
-              and maintainability are built-in from day one.
+              Not a generic “sports app”—Organizr is built around leagues, teams,
+              players, and schedules the way facilities run them. Multi-sport,
+              multiple leagues, one dashboard.
             </p>
           </CardContent>
         </Card>
 
         <Card client:visible>
           <CardHeader>
-            <CardTitle>⚡ Edge-First Architecture</CardTitle>
+            <CardTitle>⚡ Simple by Default</CardTitle>
             <CardDescription>
-              Optimized for global performance at CDN edge locations
+              Get going fast without drowning in options
             </CardDescription>
           </CardHeader>
           <CardContent>
             <p class="text-sm text-muted-foreground">
-              Built specifically for Cloudflare Workers and edge computing.
-              Your applications run closer to your users for lightning-fast
-              response times.
+              Straightforward setup and workflows. You can create a league, add
+              teams, build a schedule, and manage rosters without a manual. Power
+              features when you need them.
             </p>
           </CardContent>
         </Card>
 
         <Card client:visible>
           <CardHeader>
-            <CardTitle>🔧 Developer Experience</CardTitle>
+            <CardTitle>📅 Scheduling That Works</CardTitle>
             <CardDescription>
-              Carefully crafted tooling for maximum productivity
+              Schedules that respect your facility and your teams
             </CardDescription>
           </CardHeader>
           <CardContent>
             <p class="text-sm text-muted-foreground">
-              Hot reload, TypeScript support, comprehensive testing setup, and
-              intuitive project structure. Everything you need to stay in the
-              flow.
+              Build balanced schedules, avoid conflicts, and publish to teams in one
+              place. Round-robin, brackets, and custom formats supported.
             </p>
           </CardContent>
         </Card>
 
         <Card client:visible>
           <CardHeader>
-            <CardTitle>🌐 Full-Stack Solution</CardTitle>
+            <CardTitle>🔜 Payments & Waivers Coming</CardTitle>
             <CardDescription>
-              Complete backend and frontend in one cohesive package
+              Less chasing checks and paper forms
             </CardDescription>
           </CardHeader>
           <CardContent>
             <p class="text-sm text-muted-foreground">
-              tRPC for type-safe APIs, Better Auth for authentication and
-              database, and WebSocket support for real-time features.
+              We're adding online payment collection and digital waiver collection
+              so you can run registration and compliance without spreadsheets or
+              paper.
             </p>
           </CardContent>
         </Card>
       </div>
     </section>
 
-    <!-- Technology Choices -->
-    <section class="mb-20">
+    <!-- Contact Section -->
+    <section class="mb-20" id="contact">
       <h2 class="text-3xl font-bold tracking-tight mb-8 text-center">
-        Technology Choices
-      </h2>
-
-      <Card client:visible>
-        <CardContent className="pt-6">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div>
-              <h3 class="font-semibold mb-4">Frontend Stack</h3>
-              <ul class="space-y-2 text-sm text-muted-foreground">
-                <li>
-                  <strong>React 19:</strong> Latest React with concurrent
-                  features
-                </li>
-                <li>
-                  <strong>TypeScript:</strong> Type safety and better
-                  developer experience
-                </li>
-                <li>
-                  <strong>Astro:</strong> Lightning-fast static site generation
-                </li>
-                <li>
-                  <strong>TanStack Router:</strong> Type-safe routing with
-                  code splitting
-                </li>
-                <li>
-                  <strong>ShadCN UI:</strong> Beautiful, accessible component
-                  library
-                </li>
-                <li>
-                  <strong>Tailwind CSS:</strong> Utility-first CSS framework
-                </li>
-              </ul>
-            </div>
-
-            <div>
-              <h3 class="font-semibold mb-4">Backend Stack</h3>
-              <ul class="space-y-2 text-sm text-muted-foreground">
-                <li>
-                  <strong>Bun:</strong> Fast JavaScript runtime and package
-                  manager
-                </li>
-                <li>
-                  <strong>Hono:</strong> Ultra-fast web framework for edge
-                  computing
-                </li>
-                <li>
-                  <strong>tRPC:</strong> End-to-end type safety for APIs
-                </li>
-                <li>
-                  <strong>Better Auth:</strong> Authentication
-                </li>
-                <li>
-                  <strong>Cloudflare Workers:</strong> Serverless edge
-                  computing
-                </li>
-                <li>
-                  <strong>WebSockets:</strong> Real-time communication support
-                </li>
-              </ul>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </section>
-
-    <!-- Team Section -->
-    <section class="mb-20">
-      <h2 class="text-3xl font-bold tracking-tight mb-8 text-center">
-        Built by Kriasoft
+        Get in Touch
       </h2>
 
       <Card client:visible>
         <CardContent className="pt-6 text-center">
           <p class="text-muted-foreground mb-6">
-            React Starter Kit is maintained by Kriasoft, a team of experienced
-            developers passionate about modern web technologies and developer
-            experience.
+            Questions about Organizr, pricing, or want to request a feature? We'd
+            love to hear from facility owners and league operators.
           </p>
 
           <div class="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button asChild client:visible>
-              <a
-                href="https://github.com/kriasoft"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Visit Kriasoft on GitHub
-              </a>
-            </Button>
-            <Button variant="outline" asChild client:visible>
-              <a
-                href="https://kriasoft.com"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Learn More About Kriasoft
-              </a>
-            </Button>
+            <a
+              href="mailto:hello@organizr.app"
+              class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring h-9 px-4 py-2 bg-primary text-primary-foreground shadow hover:bg-primary/90"
+            >
+              Email Us
+            </a>
+            <a
+              href="/pricing"
+              class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring h-9 px-4 py-2 bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80"
+            >
+              View Pricing
+            </a>
           </div>
         </CardContent>
       </Card>
@@ -231,29 +155,22 @@ const description = "Learn about React Starter Kit, a production-ready full-stac
         Ready to Get Started?
       </h2>
       <p class="text-muted-foreground text-lg mb-8 max-w-2xl mx-auto">
-        Join thousands of developers who have chosen React Starter Kit for
-        their next project.
+        Start with the free plan and see how Organizr can simplify your leagues.
       </p>
 
       <div class="flex flex-col sm:flex-row gap-4 justify-center">
-        <Button size="lg" asChild client:visible>
-          <a
-            href="https://github.com/kriasoft/react-starter-kit"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Get Started Now
-          </a>
-        </Button>
-        <Button variant="outline" size="lg" asChild client:visible>
-          <a
-            href="https://github.com/kriasoft/react-starter-kit/discussions"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Join the Community
-          </a>
-        </Button>
+        <a
+          href="/#get-started"
+          class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring h-10 px-8 bg-primary text-primary-foreground shadow hover:bg-primary/90"
+        >
+          Get Started Free
+        </a>
+        <a
+          href="/features"
+          class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring h-10 px-8 bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80"
+        >
+          Explore Features
+        </a>
       </div>
     </section>
   </div>
