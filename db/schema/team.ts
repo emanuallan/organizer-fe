@@ -11,6 +11,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { organization } from "./organization";
 import { user } from "./user";
+import { playerStatusEnum } from "./player_status";
 
 export const teamStatusEnum = pgEnum("team_status", [
   "active",
@@ -55,16 +56,9 @@ export const team = pgTable(
 export type Team = typeof team.$inferSelect;
 export type NewTeam = typeof team.$inferInsert;
 
-export const playerStatusEnum = pgEnum("player_status", [
-  "active",
-  "inactive",
-  "banned",
-  "suspended",
-  "injured",
-]);
-
 /**
- * Team membership table. Links users to teams with player status.
+ * Team membership table. Links users to teams.
+ * Player status lives on organization_player (org-level).
  */
 export const teamMember = pgTable(
   "team_member",
@@ -80,7 +74,6 @@ export const teamMember = pgTable(
       .notNull()
       .unique()
       .references(() => user.id, { onDelete: "cascade" }),
-    status: playerStatusEnum().default("inactive").notNull(),
     createdAt: timestamp({ withTimezone: true, mode: "date" })
       .defaultNow()
       .notNull(),

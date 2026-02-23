@@ -2,7 +2,7 @@
 
 ## Schema (Drizzle casing: snake_case)
 
-- user, session, identity, verification, organization, organization_member, team, team_member, invitation, passkey.
+- user, session, identity, verification, organization, organization_member, organization_player, team, team_member, league, league_team, invitation, passkey.
 - UUID ids via `gen_random_uuid()` (built-in). For UUID v7, use `uuidv7()` (PostgreSQL 18+) or `uuid_generate_v7()` (pg_uuidv7 extension).
 - Timestamps use `timestamp(..., withTimezone: true, mode: "date")` with `defaultNow()` and `$onUpdate`.
 - Indexes on all FK columns; composite uniques on membership, team membership, identity provider/account, and invitation (org/email/team).

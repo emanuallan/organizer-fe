@@ -74,6 +74,26 @@ You can also override with `ENVIRONMENT=prod bun --filter @repo/db push`.
 - Run locally: `bun --filter @repo/db seed`.
 - Run against another environment: `bun --filter @repo/db seed:staging` or `seed:prod`.
 
+## Organization players and free agents
+
+The `organization_player` table is the org’s **player roster**. Anyone in this table is a “player” for that org. Users who are in `organization_player` but **not** in any `team_member` (for that org’s teams) are **free agents**.
+
+- **Add a free agent:** insert into `organization_player` (org_id, user_id).
+- **Add a player to a team:** insert into `team_member`; ensure the user is in `organization_player` (insert if not exists).
+- **Remove from team:** delete from `team_member`; the user stays in `organization_player` and becomes a free agent.
+
+**Optional backfill** (run once after adding the table, if you want existing team members on the roster):
+
+```sql
+INSERT INTO organization_player (id, organization_id, user_id, created_at, updated_at)
+SELECT gen_random_uuid(), t.organization_id, tm.user_id, tm.created_at, tm.updated_at
+FROM team_member tm
+JOIN team t ON t.id = tm.team_id
+ON CONFLICT (organization_id, user_id) DO NOTHING;
+```
+
+Then apply the new migration (see [Running Commands](#running-commands)): `bun --filter @repo/db migrate` or `bun --filter @repo/db push`.
+
 ## Importing Schemas
 
 Thanks to package exports you can import cleanly:

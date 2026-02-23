@@ -267,7 +267,7 @@ function Players() {
         <CardHeader>
           <CardTitle>Player Management</CardTitle>
           <CardDescription>
-            View and manage all players (team members)
+            View and manage all players, including free agents
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -345,7 +345,7 @@ function Players() {
                         colSpan={5}
                         className="p-8 text-center text-muted-foreground"
                       >
-                        No players found. Add a player to a team to get started.
+                        No players found. Add a player to a team or add a free agent to get started.
                       </td>
                     </tr>
                   ) : (
@@ -377,7 +377,7 @@ function Players() {
                           </td>
                           <td className="p-4">
                             <span className="text-sm">
-                              {player.teamName ?? "—"}
+                              {player.teamName ?? "Free agent"}
                             </span>
                           </td>
                           <td className="p-4">
@@ -558,8 +558,8 @@ function Players() {
               {playerToRemove?.userName ??
                 playerToRemove?.userEmail ??
                 "this player"}{" "}
-              from {playerToRemove?.teamName ?? "the team"}? They can be added
-              again later.
+              from the roster? They will be removed from any team assignments and
+              can be added again later.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

@@ -3,5 +3,6 @@ export * from "./league";
 export * from "./league_team";
 export * from "./organization";
 export * from "./passkey";
+export * from "./player_status";
 export * from "./team";
 export * from "./user";

@@ -4,12 +4,13 @@ import {
   leagueTeam,
   member,
   organization,
+  organizationPlayer,
   team,
   teamMember,
   user,
 } from "@repo/db";
 import { TRPCError } from "@trpc/server";
-import { and, count, eq, gte, ilike, isNull, lt, or } from "drizzle-orm";
+import { and, count, eq, gte, ilike, inArray, isNull, lt, or } from "drizzle-orm";
 import { z } from "zod";
 import { sendOrganizationInvitation } from "../lib/email.js";
 import { protectedProcedure, router } from "../lib/trpc.js";
@@ -715,7 +716,7 @@ export const organizationRouter = router({
 
   // ——— Players (team members) ———
 
-  /** Player (team member) statistics for the org. User must be a member of the org. */
+  /** Player statistics for the org (organization_player = roster including free agents). */
   getPlayerStats: protectedProcedure
     .input(z.object({ organizationId: z.string() }))
     .query(async ({ ctx, input }) => {
@@ -739,49 +740,45 @@ export const organizationRouter = router({
         1,
       );
 
-      const baseWhere = and(
-        eq(team.organizationId, input.organizationId),
+      const baseWhere = eq(
+        organizationPlayer.organizationId,
+        input.organizationId,
       );
 
       const [totalRow] = await ctx.db
-        .select({ value: count(teamMember.id) })
-        .from(teamMember)
-        .innerJoin(team, eq(teamMember.teamId, team.id))
+        .select({ value: count(organizationPlayer.id) })
+        .from(organizationPlayer)
         .where(baseWhere);
 
       const [totalLastMonthRow] = await ctx.db
-        .select({ value: count(teamMember.id) })
-        .from(teamMember)
-        .innerJoin(team, eq(teamMember.teamId, team.id))
+        .select({ value: count(organizationPlayer.id) })
+        .from(organizationPlayer)
         .where(
-          and(baseWhere, lt(teamMember.createdAt, startOfThisMonth)),
+          and(baseWhere, lt(organizationPlayer.createdAt, startOfThisMonth)),
         );
 
       const [activeRow] = await ctx.db
-        .select({ value: count(teamMember.id) })
-        .from(teamMember)
-        .innerJoin(team, eq(teamMember.teamId, team.id))
+        .select({ value: count(organizationPlayer.id) })
+        .from(organizationPlayer)
         .where(
-          and(baseWhere, eq(teamMember.status, "active")),
+          and(baseWhere, eq(organizationPlayer.status, "active")),
         );
 
       const [newThisMonthRow] = await ctx.db
-        .select({ value: count(teamMember.id) })
-        .from(teamMember)
-        .innerJoin(team, eq(teamMember.teamId, team.id))
+        .select({ value: count(organizationPlayer.id) })
+        .from(organizationPlayer)
         .where(
-          and(baseWhere, gte(teamMember.createdAt, startOfThisMonth)),
+          and(baseWhere, gte(organizationPlayer.createdAt, startOfThisMonth)),
         );
 
       const [newLastMonthRow] = await ctx.db
-        .select({ value: count(teamMember.id) })
-        .from(teamMember)
-        .innerJoin(team, eq(teamMember.teamId, team.id))
+        .select({ value: count(organizationPlayer.id) })
+        .from(organizationPlayer)
         .where(
           and(
             baseWhere,
-            gte(teamMember.createdAt, startOfLastMonth),
-            lt(teamMember.createdAt, startOfThisMonth),
+            gte(organizationPlayer.createdAt, startOfLastMonth),
+            lt(organizationPlayer.createdAt, startOfThisMonth),
           ),
         );
 
@@ -824,7 +821,7 @@ export const organizationRouter = router({
       };
     }),
 
-  /** List players (team members) for the org. Optional team filter and search by name/email. */
+  /** List players for the org (organization_player = roster including free agents). Optional team filter and search by name/email. */
   listPlayers: protectedProcedure
     .input(
       z.object({
@@ -855,27 +852,34 @@ export const organizationRouter = router({
         : undefined;
 
       const conditions = [
-        eq(team.organizationId, input.organizationId),
-        ...(input.teamId ? [eq(teamMember.teamId, input.teamId)] : []),
+        eq(organizationPlayer.organizationId, input.organizationId),
+        ...(input.teamId ? [eq(team.id, input.teamId)] : []),
         ...(nameOrEmailCondition ? [nameOrEmailCondition] : []),
       ];
 
       return ctx.db
         .select({
-          id: teamMember.id,
-          teamId: teamMember.teamId,
-          userId: teamMember.userId,
-          status: teamMember.status,
-          createdAt: teamMember.createdAt,
-          updatedAt: teamMember.updatedAt,
+          id: organizationPlayer.id,
+          teamId: team.id,
+          userId: organizationPlayer.userId,
+          status: organizationPlayer.status,
+          createdAt: organizationPlayer.createdAt,
+          updatedAt: organizationPlayer.updatedAt,
           teamName: team.name,
           teamSlug: team.slug,
           userName: user.name,
           userEmail: user.email,
         })
-        .from(teamMember)
-        .innerJoin(team, eq(teamMember.teamId, team.id))
-        .innerJoin(user, eq(teamMember.userId, user.id))
+        .from(organizationPlayer)
+        .innerJoin(user, eq(user.id, organizationPlayer.userId))
+        .leftJoin(teamMember, eq(teamMember.userId, organizationPlayer.userId))
+        .leftJoin(
+          team,
+          and(
+            eq(team.id, teamMember.teamId),
+            eq(team.organizationId, organizationPlayer.organizationId),
+          ),
+        )
         .where(and(...conditions));
     }),
 
@@ -939,12 +943,25 @@ export const organizationRouter = router({
           message: "This user is already assigned to a team",
         });
       }
+      await ctx.db
+        .insert(organizationPlayer)
+        .values({
+          organizationId: input.organizationId,
+          userId: existingUser.id,
+          status: input.status,
+        })
+        .onConflictDoUpdate({
+          target: [
+            organizationPlayer.organizationId,
+            organizationPlayer.userId,
+          ],
+          set: { status: input.status, updatedAt: new Date() },
+        });
       const [created] = await ctx.db
         .insert(teamMember)
         .values({
           teamId: input.teamId,
           userId: existingUser.id,
-          status: input.status,
         })
         .returning();
       if (!created) {
@@ -953,10 +970,13 @@ export const organizationRouter = router({
           message: "Failed to add player",
         });
       }
-      return created;
+      return {
+        ...created,
+        status: input.status,
+      };
     }),
 
-  /** Update a player's status. */
+  /** Update a player's status. playerId = organization_player.id */
   updatePlayer: protectedProcedure
     .input(
       z.object({
@@ -984,26 +1004,25 @@ export const organizationRouter = router({
           message: "Not a member of this organization",
         });
       }
-      const [tm] = await ctx.db
-        .select({ teamId: teamMember.teamId })
-        .from(teamMember)
-        .innerJoin(team, eq(teamMember.teamId, team.id))
+      const [op] = await ctx.db
+        .select()
+        .from(organizationPlayer)
         .where(
           and(
-            eq(teamMember.id, input.playerId),
-            eq(team.organizationId, input.organizationId),
+            eq(organizationPlayer.id, input.playerId),
+            eq(organizationPlayer.organizationId, input.organizationId),
           ),
         );
-      if (!tm) {
+      if (!op) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Player not found",
         });
       }
       const [updated] = await ctx.db
-        .update(teamMember)
+        .update(organizationPlayer)
         .set({ status: input.status })
-        .where(eq(teamMember.id, input.playerId))
+        .where(eq(organizationPlayer.id, input.playerId))
         .returning();
       if (!updated) {
         throw new TRPCError({
@@ -1014,7 +1033,7 @@ export const organizationRouter = router({
       return updated;
     }),
 
-  /** Remove a player from a team. */
+  /** Remove a player from the org roster. playerId = organization_player.id. Deletes from roster and any team assignments. */
   removePlayer: protectedProcedure
     .input(
       z.object({
@@ -1035,26 +1054,40 @@ export const organizationRouter = router({
           message: "Not a member of this organization",
         });
       }
-      const [tm] = await ctx.db
-        .select({ id: teamMember.id })
-        .from(teamMember)
-        .innerJoin(team, eq(teamMember.teamId, team.id))
+      const [op] = await ctx.db
+        .select({ userId: organizationPlayer.userId })
+        .from(organizationPlayer)
         .where(
           and(
-            eq(teamMember.id, input.playerId),
-            eq(team.organizationId, input.organizationId),
+            eq(organizationPlayer.id, input.playerId),
+            eq(organizationPlayer.organizationId, input.organizationId),
           ),
         );
-      if (!tm) {
+      if (!op) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Player not found",
         });
       }
+      const orgTeams = await ctx.db
+        .select({ id: team.id })
+        .from(team)
+        .where(eq(team.organizationId, input.organizationId));
+      const orgTeamIds = orgTeams.map((t) => t.id);
+      if (orgTeamIds.length > 0) {
+        await ctx.db
+          .delete(teamMember)
+          .where(
+            and(
+              eq(teamMember.userId, op.userId),
+              inArray(teamMember.teamId, orgTeamIds),
+            ),
+          );
+      }
       const deleted = await ctx.db
-        .delete(teamMember)
-        .where(eq(teamMember.id, input.playerId))
-        .returning({ id: teamMember.id });
+        .delete(organizationPlayer)
+        .where(eq(organizationPlayer.id, input.playerId))
+        .returning({ id: organizationPlayer.id });
       if (deleted.length === 0) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
