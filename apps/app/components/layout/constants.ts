@@ -1,5 +1,6 @@
 import {
   Calendar,
+  MapPin,
   Settings,
   Trophy,
   UserCog,
@@ -13,6 +14,7 @@ export const sidebarItems = [
   { icon: Trophy, label: "Leagues", to: "/leagues" },
   { icon: UsersRound, label: "Teams", to: "/teams" },
   { icon: UserCircle2, label: "Players", to: "/players" },
+  { icon: MapPin, label: "Facilities", to: "/facilities" },
   { icon: UserCog, label: "Staff", to: "/staff" },
   // { icon: Activity, label: "Analytics", to: "/analytics" },
   // { icon: FileText, label: "Reports", to: "/reports" },

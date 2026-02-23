@@ -1,4 +1,6 @@
 import {
+  facility,
+  facilitySurface,
   invitation,
   league,
   leagueTeam,
@@ -1647,5 +1649,414 @@ export const organizationRouter = router({
         organizationName: org?.name ?? "the organization",
       });
       return { type: "invitation" as const, invitation: inv };
+    }),
+
+  // ——— Facilities ———
+
+  /** List facilities for an organization. Optional search by name. */
+  listFacilities: protectedProcedure
+    .input(
+      z.object({
+        organizationId: z.string(),
+        search: z.string().optional(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const membership = await ctx.db.query.member.findFirst({
+        where: and(
+          eq(member.userId, ctx.user.id),
+          eq(member.organizationId, input.organizationId),
+        ),
+      });
+      if (!membership) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Not a member of this organization",
+        });
+      }
+      const searchTerm = input.search?.trim();
+      const conditions = [eq(facility.organizationId, input.organizationId)];
+      if (searchTerm) {
+        conditions.push(ilike(facility.name, `%${searchTerm}%`));
+      }
+      const list = await ctx.db.query.facility.findMany({
+        where: and(...conditions),
+        orderBy: (f, { asc }) => [asc(f.name)],
+        columns: {
+          id: true,
+          name: true,
+          slug: true,
+          address: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+        with: {
+          surfaces: { columns: { id: true } },
+        },
+      });
+      return list;
+    }),
+
+  /** Get a facility by id with its surfaces. Facility must belong to the organization. */
+  getFacility: protectedProcedure
+    .input(
+      z.object({
+        organizationId: z.string(),
+        facilityId: z.string(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const membership = await ctx.db.query.member.findFirst({
+        where: and(
+          eq(member.userId, ctx.user.id),
+          eq(member.organizationId, input.organizationId),
+        ),
+      });
+      if (!membership) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Not a member of this organization",
+        });
+      }
+      const found = await ctx.db.query.facility.findFirst({
+        where: and(
+          eq(facility.id, input.facilityId),
+          eq(facility.organizationId, input.organizationId),
+        ),
+        with: {
+          surfaces: {
+            orderBy: (s, { asc }) => [asc(s.sortOrder), asc(s.name)],
+          },
+        },
+      });
+      if (!found) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Facility not found",
+        });
+      }
+      return found;
+    }),
+
+  /** Create a facility. Slug is derived from name if not provided. */
+  createFacility: protectedProcedure
+    .input(
+      z.object({
+        organizationId: z.string(),
+        name: z.string().min(1, "Name is required"),
+        address: z.string().optional(),
+        slug: z.string().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const membership = await ctx.db.query.member.findFirst({
+        where: and(
+          eq(member.userId, ctx.user.id),
+          eq(member.organizationId, input.organizationId),
+        ),
+      });
+      if (!membership) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Not a member of this organization",
+        });
+      }
+      const baseSlug =
+        input.slug?.trim() ||
+        input.name
+          .trim()
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-|-$/g, "") ||
+        "facility";
+      let slug = baseSlug;
+      let suffix = 0;
+      while (true) {
+        const [existing] = await ctx.db
+          .select({ id: facility.id })
+          .from(facility)
+          .where(
+            and(
+              eq(facility.organizationId, input.organizationId),
+              eq(facility.slug, slug),
+            ),
+          );
+        if (!existing) break;
+        suffix += 1;
+        slug = `${baseSlug}-${suffix}`;
+      }
+      const [created] = await ctx.db
+        .insert(facility)
+        .values({
+          organizationId: input.organizationId,
+          name: input.name.trim(),
+          slug,
+          ...(input.address != null ? { address: input.address.trim() || null } : {}),
+        })
+        .returning();
+      if (!created) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to create facility",
+        });
+      }
+      return created;
+    }),
+
+  /** Update a facility. Facility must belong to the organization. */
+  updateFacility: protectedProcedure
+    .input(
+      z.object({
+        organizationId: z.string(),
+        facilityId: z.string(),
+        name: z.string().min(1).optional(),
+        address: z.string().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const membership = await ctx.db.query.member.findFirst({
+        where: and(
+          eq(member.userId, ctx.user.id),
+          eq(member.organizationId, input.organizationId),
+        ),
+      });
+      if (!membership) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Not a member of this organization",
+        });
+      }
+      const [updated] = await ctx.db
+        .update(facility)
+        .set({
+          ...(input.name != null ? { name: input.name.trim() } : {}),
+          ...(input.address !== undefined ? { address: input.address?.trim() || null } : {}),
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(facility.id, input.facilityId),
+            eq(facility.organizationId, input.organizationId),
+          ),
+        )
+        .returning();
+      if (!updated) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Facility not found",
+        });
+      }
+      return updated;
+    }),
+
+  /** Delete a facility. Cascades to surfaces. */
+  deleteFacility: protectedProcedure
+    .input(
+      z.object({
+        organizationId: z.string(),
+        facilityId: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const membership = await ctx.db.query.member.findFirst({
+        where: and(
+          eq(member.userId, ctx.user.id),
+          eq(member.organizationId, input.organizationId),
+        ),
+      });
+      if (!membership) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Not a member of this organization",
+        });
+      }
+      const [deleted] = await ctx.db
+        .delete(facility)
+        .where(
+          and(
+            eq(facility.id, input.facilityId),
+            eq(facility.organizationId, input.organizationId),
+          ),
+        )
+        .returning({ id: facility.id });
+      if (!deleted) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Facility not found",
+        });
+      }
+      return { id: deleted.id };
+    }),
+
+  /** Add a surface to a facility. Facility must belong to the organization. */
+  addFacilitySurface: protectedProcedure
+    .input(
+      z.object({
+        organizationId: z.string(),
+        facilityId: z.string(),
+        name: z.string().min(1, "Name is required"),
+        type: z.enum(["field", "court", "diamond", "rink", "other"]).optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const membership = await ctx.db.query.member.findFirst({
+        where: and(
+          eq(member.userId, ctx.user.id),
+          eq(member.organizationId, input.organizationId),
+        ),
+      });
+      if (!membership) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Not a member of this organization",
+        });
+      }
+      const [facilityRow] = await ctx.db
+        .select({ id: facility.id })
+        .from(facility)
+        .where(
+          and(
+            eq(facility.id, input.facilityId),
+            eq(facility.organizationId, input.organizationId),
+          ),
+        );
+      if (!facilityRow) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Facility not found",
+        });
+      }
+      const [created] = await ctx.db
+        .insert(facilitySurface)
+        .values({
+          facilityId: input.facilityId,
+          name: input.name.trim(),
+          type: input.type ?? "other",
+        })
+        .returning();
+      if (!created) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to add surface",
+        });
+      }
+      return created;
+    }),
+
+  /** Update a facility surface. */
+  updateFacilitySurface: protectedProcedure
+    .input(
+      z.object({
+        organizationId: z.string(),
+        facilityId: z.string(),
+        surfaceId: z.string(),
+        name: z.string().min(1).optional(),
+        type: z.enum(["field", "court", "diamond", "rink", "other"]).optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const membership = await ctx.db.query.member.findFirst({
+        where: and(
+          eq(member.userId, ctx.user.id),
+          eq(member.organizationId, input.organizationId),
+        ),
+      });
+      if (!membership) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Not a member of this organization",
+        });
+      }
+      const [facilityRow] = await ctx.db
+        .select({ id: facility.id })
+        .from(facility)
+        .where(
+          and(
+            eq(facility.id, input.facilityId),
+            eq(facility.organizationId, input.organizationId),
+          ),
+        );
+      if (!facilityRow) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Facility not found",
+        });
+      }
+      const [updated] = await ctx.db
+        .update(facilitySurface)
+        .set({
+          ...(input.name != null ? { name: input.name.trim() } : {}),
+          ...(input.type != null ? { type: input.type } : {}),
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(facilitySurface.id, input.surfaceId),
+            eq(facilitySurface.facilityId, input.facilityId),
+          ),
+        )
+        .returning();
+      if (!updated) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Surface not found",
+        });
+      }
+      return updated;
+    }),
+
+  /** Remove a surface from a facility. */
+  removeFacilitySurface: protectedProcedure
+    .input(
+      z.object({
+        organizationId: z.string(),
+        facilityId: z.string(),
+        surfaceId: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const membership = await ctx.db.query.member.findFirst({
+        where: and(
+          eq(member.userId, ctx.user.id),
+          eq(member.organizationId, input.organizationId),
+        ),
+      });
+      if (!membership) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Not a member of this organization",
+        });
+      }
+      const [facilityRow] = await ctx.db
+        .select({ id: facility.id })
+        .from(facility)
+        .where(
+          and(
+            eq(facility.id, input.facilityId),
+            eq(facility.organizationId, input.organizationId),
+          ),
+        );
+      if (!facilityRow) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Facility not found",
+        });
+      }
+      const [deleted] = await ctx.db
+        .delete(facilitySurface)
+        .where(
+          and(
+            eq(facilitySurface.id, input.surfaceId),
+            eq(facilitySurface.facilityId, input.facilityId),
+          ),
+        )
+        .returning({ id: facilitySurface.id });
+      if (!deleted) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Surface not found",
+        });
+      }
+      return { id: deleted.id };
     }),
 });

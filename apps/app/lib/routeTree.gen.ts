@@ -19,6 +19,7 @@ import { Route as appSettingsRouteImport } from './../routes/(app)/settings'
 import { Route as appReportsRouteImport } from './../routes/(app)/reports'
 import { Route as appPlayersRouteImport } from './../routes/(app)/players'
 import { Route as appLeaguesRouteImport } from './../routes/(app)/leagues'
+import { Route as appFacilitiesRouteImport } from './../routes/(app)/facilities'
 import { Route as appDashboardRouteImport } from './../routes/(app)/dashboard'
 import { Route as appAnalyticsRouteImport } from './../routes/(app)/analytics'
 import { Route as appAcceptInvitationRouteImport } from './../routes/(app)/accept-invitation'
@@ -26,13 +27,17 @@ import { Route as appAboutRouteImport } from './../routes/(app)/about'
 import { Route as appTeamsIndexRouteImport } from './../routes/(app)/teams.index'
 import { Route as appStaffIndexRouteImport } from './../routes/(app)/staff.index'
 import { Route as appLeaguesIndexRouteImport } from './../routes/(app)/leagues.index'
+import { Route as appFacilitiesIndexRouteImport } from './../routes/(app)/facilities.index'
 import { Route as appTeamsCreateRouteImport } from './../routes/(app)/teams.create'
 import { Route as appTeamsTeamSlugRouteImport } from './../routes/(app)/teams.$teamSlug'
 import { Route as appStaffCreateRouteImport } from './../routes/(app)/staff.create'
 import { Route as appLeaguesCreateRouteImport } from './../routes/(app)/leagues.create'
 import { Route as appLeaguesLeagueIdRouteImport } from './../routes/(app)/leagues.$leagueId'
+import { Route as appFacilitiesCreateRouteImport } from './../routes/(app)/facilities.create'
+import { Route as appFacilitiesFacilityIdRouteImport } from './../routes/(app)/facilities.$facilityId'
 import { Route as appTeamsTeamSlugIndexRouteImport } from './../routes/(app)/teams.$teamSlug.index'
 import { Route as appLeaguesLeagueIdIndexRouteImport } from './../routes/(app)/leagues.$leagueId.index'
+import { Route as appFacilitiesFacilityIdIndexRouteImport } from './../routes/(app)/facilities.$facilityId.index'
 import { Route as appTeamsTeamSlugPlayersRouteImport } from './../routes/(app)/teams.$teamSlug.players'
 import { Route as appLeaguesLeagueIdTeamsRouteImport } from './../routes/(app)/leagues.$leagueId.teams'
 
@@ -85,6 +90,11 @@ const appLeaguesRoute = appLeaguesRouteImport.update({
   path: '/leagues',
   getParentRoute: () => appRouteRoute,
 } as any)
+const appFacilitiesRoute = appFacilitiesRouteImport.update({
+  id: '/facilities',
+  path: '/facilities',
+  getParentRoute: () => appRouteRoute,
+} as any)
 const appDashboardRoute = appDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -120,6 +130,11 @@ const appLeaguesIndexRoute = appLeaguesIndexRouteImport.update({
   path: '/',
   getParentRoute: () => appLeaguesRoute,
 } as any)
+const appFacilitiesIndexRoute = appFacilitiesIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => appFacilitiesRoute,
+} as any)
 const appTeamsCreateRoute = appTeamsCreateRouteImport.update({
   id: '/create',
   path: '/create',
@@ -145,6 +160,16 @@ const appLeaguesLeagueIdRoute = appLeaguesLeagueIdRouteImport.update({
   path: '/$leagueId',
   getParentRoute: () => appLeaguesRoute,
 } as any)
+const appFacilitiesCreateRoute = appFacilitiesCreateRouteImport.update({
+  id: '/create',
+  path: '/create',
+  getParentRoute: () => appFacilitiesRoute,
+} as any)
+const appFacilitiesFacilityIdRoute = appFacilitiesFacilityIdRouteImport.update({
+  id: '/$facilityId',
+  path: '/$facilityId',
+  getParentRoute: () => appFacilitiesRoute,
+} as any)
 const appTeamsTeamSlugIndexRoute = appTeamsTeamSlugIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -155,6 +180,12 @@ const appLeaguesLeagueIdIndexRoute = appLeaguesLeagueIdIndexRouteImport.update({
   path: '/',
   getParentRoute: () => appLeaguesLeagueIdRoute,
 } as any)
+const appFacilitiesFacilityIdIndexRoute =
+  appFacilitiesFacilityIdIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => appFacilitiesFacilityIdRoute,
+  } as any)
 const appTeamsTeamSlugPlayersRoute = appTeamsTeamSlugPlayersRouteImport.update({
   id: '/players',
   path: '/players',
@@ -171,6 +202,7 @@ export interface FileRoutesByFullPath {
   '/accept-invitation': typeof appAcceptInvitationRoute
   '/analytics': typeof appAnalyticsRoute
   '/dashboard': typeof appDashboardRoute
+  '/facilities': typeof appFacilitiesRouteWithChildren
   '/leagues': typeof appLeaguesRouteWithChildren
   '/players': typeof appPlayersRoute
   '/reports': typeof appReportsRoute
@@ -180,16 +212,20 @@ export interface FileRoutesByFullPath {
   '/login': typeof authLoginRoute
   '/signup': typeof authSignupRoute
   '/': typeof appIndexRoute
+  '/facilities/$facilityId': typeof appFacilitiesFacilityIdRouteWithChildren
+  '/facilities/create': typeof appFacilitiesCreateRoute
   '/leagues/$leagueId': typeof appLeaguesLeagueIdRouteWithChildren
   '/leagues/create': typeof appLeaguesCreateRoute
   '/staff/create': typeof appStaffCreateRoute
   '/teams/$teamSlug': typeof appTeamsTeamSlugRouteWithChildren
   '/teams/create': typeof appTeamsCreateRoute
+  '/facilities/': typeof appFacilitiesIndexRoute
   '/leagues/': typeof appLeaguesIndexRoute
   '/staff/': typeof appStaffIndexRoute
   '/teams/': typeof appTeamsIndexRoute
   '/leagues/$leagueId/teams': typeof appLeaguesLeagueIdTeamsRoute
   '/teams/$teamSlug/players': typeof appTeamsTeamSlugPlayersRoute
+  '/facilities/$facilityId/': typeof appFacilitiesFacilityIdIndexRoute
   '/leagues/$leagueId/': typeof appLeaguesLeagueIdIndexRoute
   '/teams/$teamSlug/': typeof appTeamsTeamSlugIndexRoute
 }
@@ -204,14 +240,17 @@ export interface FileRoutesByTo {
   '/login': typeof authLoginRoute
   '/signup': typeof authSignupRoute
   '/': typeof appIndexRoute
+  '/facilities/create': typeof appFacilitiesCreateRoute
   '/leagues/create': typeof appLeaguesCreateRoute
   '/staff/create': typeof appStaffCreateRoute
   '/teams/create': typeof appTeamsCreateRoute
+  '/facilities': typeof appFacilitiesIndexRoute
   '/leagues': typeof appLeaguesIndexRoute
   '/staff': typeof appStaffIndexRoute
   '/teams': typeof appTeamsIndexRoute
   '/leagues/$leagueId/teams': typeof appLeaguesLeagueIdTeamsRoute
   '/teams/$teamSlug/players': typeof appTeamsTeamSlugPlayersRoute
+  '/facilities/$facilityId': typeof appFacilitiesFacilityIdIndexRoute
   '/leagues/$leagueId': typeof appLeaguesLeagueIdIndexRoute
   '/teams/$teamSlug': typeof appTeamsTeamSlugIndexRoute
 }
@@ -222,6 +261,7 @@ export interface FileRoutesById {
   '/(app)/accept-invitation': typeof appAcceptInvitationRoute
   '/(app)/analytics': typeof appAnalyticsRoute
   '/(app)/dashboard': typeof appDashboardRoute
+  '/(app)/facilities': typeof appFacilitiesRouteWithChildren
   '/(app)/leagues': typeof appLeaguesRouteWithChildren
   '/(app)/players': typeof appPlayersRoute
   '/(app)/reports': typeof appReportsRoute
@@ -231,16 +271,20 @@ export interface FileRoutesById {
   '/(auth)/login': typeof authLoginRoute
   '/(auth)/signup': typeof authSignupRoute
   '/(app)/': typeof appIndexRoute
+  '/(app)/facilities/$facilityId': typeof appFacilitiesFacilityIdRouteWithChildren
+  '/(app)/facilities/create': typeof appFacilitiesCreateRoute
   '/(app)/leagues/$leagueId': typeof appLeaguesLeagueIdRouteWithChildren
   '/(app)/leagues/create': typeof appLeaguesCreateRoute
   '/(app)/staff/create': typeof appStaffCreateRoute
   '/(app)/teams/$teamSlug': typeof appTeamsTeamSlugRouteWithChildren
   '/(app)/teams/create': typeof appTeamsCreateRoute
+  '/(app)/facilities/': typeof appFacilitiesIndexRoute
   '/(app)/leagues/': typeof appLeaguesIndexRoute
   '/(app)/staff/': typeof appStaffIndexRoute
   '/(app)/teams/': typeof appTeamsIndexRoute
   '/(app)/leagues/$leagueId/teams': typeof appLeaguesLeagueIdTeamsRoute
   '/(app)/teams/$teamSlug/players': typeof appTeamsTeamSlugPlayersRoute
+  '/(app)/facilities/$facilityId/': typeof appFacilitiesFacilityIdIndexRoute
   '/(app)/leagues/$leagueId/': typeof appLeaguesLeagueIdIndexRoute
   '/(app)/teams/$teamSlug/': typeof appTeamsTeamSlugIndexRoute
 }
@@ -251,6 +295,7 @@ export interface FileRouteTypes {
     | '/accept-invitation'
     | '/analytics'
     | '/dashboard'
+    | '/facilities'
     | '/leagues'
     | '/players'
     | '/reports'
@@ -260,16 +305,20 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/'
+    | '/facilities/$facilityId'
+    | '/facilities/create'
     | '/leagues/$leagueId'
     | '/leagues/create'
     | '/staff/create'
     | '/teams/$teamSlug'
     | '/teams/create'
+    | '/facilities/'
     | '/leagues/'
     | '/staff/'
     | '/teams/'
     | '/leagues/$leagueId/teams'
     | '/teams/$teamSlug/players'
+    | '/facilities/$facilityId/'
     | '/leagues/$leagueId/'
     | '/teams/$teamSlug/'
   fileRoutesByTo: FileRoutesByTo
@@ -284,14 +333,17 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/'
+    | '/facilities/create'
     | '/leagues/create'
     | '/staff/create'
     | '/teams/create'
+    | '/facilities'
     | '/leagues'
     | '/staff'
     | '/teams'
     | '/leagues/$leagueId/teams'
     | '/teams/$teamSlug/players'
+    | '/facilities/$facilityId'
     | '/leagues/$leagueId'
     | '/teams/$teamSlug'
   id:
@@ -301,6 +353,7 @@ export interface FileRouteTypes {
     | '/(app)/accept-invitation'
     | '/(app)/analytics'
     | '/(app)/dashboard'
+    | '/(app)/facilities'
     | '/(app)/leagues'
     | '/(app)/players'
     | '/(app)/reports'
@@ -310,16 +363,20 @@ export interface FileRouteTypes {
     | '/(auth)/login'
     | '/(auth)/signup'
     | '/(app)/'
+    | '/(app)/facilities/$facilityId'
+    | '/(app)/facilities/create'
     | '/(app)/leagues/$leagueId'
     | '/(app)/leagues/create'
     | '/(app)/staff/create'
     | '/(app)/teams/$teamSlug'
     | '/(app)/teams/create'
+    | '/(app)/facilities/'
     | '/(app)/leagues/'
     | '/(app)/staff/'
     | '/(app)/teams/'
     | '/(app)/leagues/$leagueId/teams'
     | '/(app)/teams/$teamSlug/players'
+    | '/(app)/facilities/$facilityId/'
     | '/(app)/leagues/$leagueId/'
     | '/(app)/teams/$teamSlug/'
   fileRoutesById: FileRoutesById
@@ -402,6 +459,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof appLeaguesRouteImport
       parentRoute: typeof appRouteRoute
     }
+    '/(app)/facilities': {
+      id: '/(app)/facilities'
+      path: '/facilities'
+      fullPath: '/facilities'
+      preLoaderRoute: typeof appFacilitiesRouteImport
+      parentRoute: typeof appRouteRoute
+    }
     '/(app)/dashboard': {
       id: '/(app)/dashboard'
       path: '/dashboard'
@@ -451,6 +515,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof appLeaguesIndexRouteImport
       parentRoute: typeof appLeaguesRoute
     }
+    '/(app)/facilities/': {
+      id: '/(app)/facilities/'
+      path: '/'
+      fullPath: '/facilities/'
+      preLoaderRoute: typeof appFacilitiesIndexRouteImport
+      parentRoute: typeof appFacilitiesRoute
+    }
     '/(app)/teams/create': {
       id: '/(app)/teams/create'
       path: '/create'
@@ -486,6 +557,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof appLeaguesLeagueIdRouteImport
       parentRoute: typeof appLeaguesRoute
     }
+    '/(app)/facilities/create': {
+      id: '/(app)/facilities/create'
+      path: '/create'
+      fullPath: '/facilities/create'
+      preLoaderRoute: typeof appFacilitiesCreateRouteImport
+      parentRoute: typeof appFacilitiesRoute
+    }
+    '/(app)/facilities/$facilityId': {
+      id: '/(app)/facilities/$facilityId'
+      path: '/$facilityId'
+      fullPath: '/facilities/$facilityId'
+      preLoaderRoute: typeof appFacilitiesFacilityIdRouteImport
+      parentRoute: typeof appFacilitiesRoute
+    }
     '/(app)/teams/$teamSlug/': {
       id: '/(app)/teams/$teamSlug/'
       path: '/'
@@ -499,6 +584,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/leagues/$leagueId/'
       preLoaderRoute: typeof appLeaguesLeagueIdIndexRouteImport
       parentRoute: typeof appLeaguesLeagueIdRoute
+    }
+    '/(app)/facilities/$facilityId/': {
+      id: '/(app)/facilities/$facilityId/'
+      path: '/'
+      fullPath: '/facilities/$facilityId/'
+      preLoaderRoute: typeof appFacilitiesFacilityIdIndexRouteImport
+      parentRoute: typeof appFacilitiesFacilityIdRoute
     }
     '/(app)/teams/$teamSlug/players': {
       id: '/(app)/teams/$teamSlug/players'
@@ -516,6 +608,36 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface appFacilitiesFacilityIdRouteChildren {
+  appFacilitiesFacilityIdIndexRoute: typeof appFacilitiesFacilityIdIndexRoute
+}
+
+const appFacilitiesFacilityIdRouteChildren: appFacilitiesFacilityIdRouteChildren =
+  {
+    appFacilitiesFacilityIdIndexRoute: appFacilitiesFacilityIdIndexRoute,
+  }
+
+const appFacilitiesFacilityIdRouteWithChildren =
+  appFacilitiesFacilityIdRoute._addFileChildren(
+    appFacilitiesFacilityIdRouteChildren,
+  )
+
+interface appFacilitiesRouteChildren {
+  appFacilitiesFacilityIdRoute: typeof appFacilitiesFacilityIdRouteWithChildren
+  appFacilitiesCreateRoute: typeof appFacilitiesCreateRoute
+  appFacilitiesIndexRoute: typeof appFacilitiesIndexRoute
+}
+
+const appFacilitiesRouteChildren: appFacilitiesRouteChildren = {
+  appFacilitiesFacilityIdRoute: appFacilitiesFacilityIdRouteWithChildren,
+  appFacilitiesCreateRoute: appFacilitiesCreateRoute,
+  appFacilitiesIndexRoute: appFacilitiesIndexRoute,
+}
+
+const appFacilitiesRouteWithChildren = appFacilitiesRoute._addFileChildren(
+  appFacilitiesRouteChildren,
+)
 
 interface appLeaguesLeagueIdRouteChildren {
   appLeaguesLeagueIdTeamsRoute: typeof appLeaguesLeagueIdTeamsRoute
@@ -594,6 +716,7 @@ interface appRouteRouteChildren {
   appAcceptInvitationRoute: typeof appAcceptInvitationRoute
   appAnalyticsRoute: typeof appAnalyticsRoute
   appDashboardRoute: typeof appDashboardRoute
+  appFacilitiesRoute: typeof appFacilitiesRouteWithChildren
   appLeaguesRoute: typeof appLeaguesRouteWithChildren
   appPlayersRoute: typeof appPlayersRoute
   appReportsRoute: typeof appReportsRoute
@@ -608,6 +731,7 @@ const appRouteRouteChildren: appRouteRouteChildren = {
   appAcceptInvitationRoute: appAcceptInvitationRoute,
   appAnalyticsRoute: appAnalyticsRoute,
   appDashboardRoute: appDashboardRoute,
+  appFacilitiesRoute: appFacilitiesRouteWithChildren,
   appLeaguesRoute: appLeaguesRouteWithChildren,
   appPlayersRoute: appPlayersRoute,
   appReportsRoute: appReportsRoute,
