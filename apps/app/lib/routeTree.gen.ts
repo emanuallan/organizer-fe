@@ -31,7 +31,9 @@ import { Route as appTeamsTeamSlugRouteImport } from './../routes/(app)/teams.$t
 import { Route as appStaffCreateRouteImport } from './../routes/(app)/staff.create'
 import { Route as appLeaguesCreateRouteImport } from './../routes/(app)/leagues.create'
 import { Route as appLeaguesLeagueIdRouteImport } from './../routes/(app)/leagues.$leagueId'
+import { Route as appTeamsTeamSlugIndexRouteImport } from './../routes/(app)/teams.$teamSlug.index'
 import { Route as appLeaguesLeagueIdIndexRouteImport } from './../routes/(app)/leagues.$leagueId.index'
+import { Route as appTeamsTeamSlugPlayersRouteImport } from './../routes/(app)/teams.$teamSlug.players'
 import { Route as appLeaguesLeagueIdTeamsRouteImport } from './../routes/(app)/leagues.$leagueId.teams'
 
 const appRouteRoute = appRouteRouteImport.update({
@@ -143,10 +145,20 @@ const appLeaguesLeagueIdRoute = appLeaguesLeagueIdRouteImport.update({
   path: '/$leagueId',
   getParentRoute: () => appLeaguesRoute,
 } as any)
+const appTeamsTeamSlugIndexRoute = appTeamsTeamSlugIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => appTeamsTeamSlugRoute,
+} as any)
 const appLeaguesLeagueIdIndexRoute = appLeaguesLeagueIdIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => appLeaguesLeagueIdRoute,
+} as any)
+const appTeamsTeamSlugPlayersRoute = appTeamsTeamSlugPlayersRouteImport.update({
+  id: '/players',
+  path: '/players',
+  getParentRoute: () => appTeamsTeamSlugRoute,
 } as any)
 const appLeaguesLeagueIdTeamsRoute = appLeaguesLeagueIdTeamsRouteImport.update({
   id: '/teams',
@@ -171,13 +183,15 @@ export interface FileRoutesByFullPath {
   '/leagues/$leagueId': typeof appLeaguesLeagueIdRouteWithChildren
   '/leagues/create': typeof appLeaguesCreateRoute
   '/staff/create': typeof appStaffCreateRoute
-  '/teams/$teamSlug': typeof appTeamsTeamSlugRoute
+  '/teams/$teamSlug': typeof appTeamsTeamSlugRouteWithChildren
   '/teams/create': typeof appTeamsCreateRoute
   '/leagues/': typeof appLeaguesIndexRoute
   '/staff/': typeof appStaffIndexRoute
   '/teams/': typeof appTeamsIndexRoute
   '/leagues/$leagueId/teams': typeof appLeaguesLeagueIdTeamsRoute
+  '/teams/$teamSlug/players': typeof appTeamsTeamSlugPlayersRoute
   '/leagues/$leagueId/': typeof appLeaguesLeagueIdIndexRoute
+  '/teams/$teamSlug/': typeof appTeamsTeamSlugIndexRoute
 }
 export interface FileRoutesByTo {
   '/about': typeof appAboutRoute
@@ -192,13 +206,14 @@ export interface FileRoutesByTo {
   '/': typeof appIndexRoute
   '/leagues/create': typeof appLeaguesCreateRoute
   '/staff/create': typeof appStaffCreateRoute
-  '/teams/$teamSlug': typeof appTeamsTeamSlugRoute
   '/teams/create': typeof appTeamsCreateRoute
   '/leagues': typeof appLeaguesIndexRoute
   '/staff': typeof appStaffIndexRoute
   '/teams': typeof appTeamsIndexRoute
   '/leagues/$leagueId/teams': typeof appLeaguesLeagueIdTeamsRoute
+  '/teams/$teamSlug/players': typeof appTeamsTeamSlugPlayersRoute
   '/leagues/$leagueId': typeof appLeaguesLeagueIdIndexRoute
+  '/teams/$teamSlug': typeof appTeamsTeamSlugIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -219,13 +234,15 @@ export interface FileRoutesById {
   '/(app)/leagues/$leagueId': typeof appLeaguesLeagueIdRouteWithChildren
   '/(app)/leagues/create': typeof appLeaguesCreateRoute
   '/(app)/staff/create': typeof appStaffCreateRoute
-  '/(app)/teams/$teamSlug': typeof appTeamsTeamSlugRoute
+  '/(app)/teams/$teamSlug': typeof appTeamsTeamSlugRouteWithChildren
   '/(app)/teams/create': typeof appTeamsCreateRoute
   '/(app)/leagues/': typeof appLeaguesIndexRoute
   '/(app)/staff/': typeof appStaffIndexRoute
   '/(app)/teams/': typeof appTeamsIndexRoute
   '/(app)/leagues/$leagueId/teams': typeof appLeaguesLeagueIdTeamsRoute
+  '/(app)/teams/$teamSlug/players': typeof appTeamsTeamSlugPlayersRoute
   '/(app)/leagues/$leagueId/': typeof appLeaguesLeagueIdIndexRoute
+  '/(app)/teams/$teamSlug/': typeof appTeamsTeamSlugIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -252,7 +269,9 @@ export interface FileRouteTypes {
     | '/staff/'
     | '/teams/'
     | '/leagues/$leagueId/teams'
+    | '/teams/$teamSlug/players'
     | '/leagues/$leagueId/'
+    | '/teams/$teamSlug/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/about'
@@ -267,13 +286,14 @@ export interface FileRouteTypes {
     | '/'
     | '/leagues/create'
     | '/staff/create'
-    | '/teams/$teamSlug'
     | '/teams/create'
     | '/leagues'
     | '/staff'
     | '/teams'
     | '/leagues/$leagueId/teams'
+    | '/teams/$teamSlug/players'
     | '/leagues/$leagueId'
+    | '/teams/$teamSlug'
   id:
     | '__root__'
     | '/(app)'
@@ -299,7 +319,9 @@ export interface FileRouteTypes {
     | '/(app)/staff/'
     | '/(app)/teams/'
     | '/(app)/leagues/$leagueId/teams'
+    | '/(app)/teams/$teamSlug/players'
     | '/(app)/leagues/$leagueId/'
+    | '/(app)/teams/$teamSlug/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -464,12 +486,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof appLeaguesLeagueIdRouteImport
       parentRoute: typeof appLeaguesRoute
     }
+    '/(app)/teams/$teamSlug/': {
+      id: '/(app)/teams/$teamSlug/'
+      path: '/'
+      fullPath: '/teams/$teamSlug/'
+      preLoaderRoute: typeof appTeamsTeamSlugIndexRouteImport
+      parentRoute: typeof appTeamsTeamSlugRoute
+    }
     '/(app)/leagues/$leagueId/': {
       id: '/(app)/leagues/$leagueId/'
       path: '/'
       fullPath: '/leagues/$leagueId/'
       preLoaderRoute: typeof appLeaguesLeagueIdIndexRouteImport
       parentRoute: typeof appLeaguesLeagueIdRoute
+    }
+    '/(app)/teams/$teamSlug/players': {
+      id: '/(app)/teams/$teamSlug/players'
+      path: '/players'
+      fullPath: '/teams/$teamSlug/players'
+      preLoaderRoute: typeof appTeamsTeamSlugPlayersRouteImport
+      parentRoute: typeof appTeamsTeamSlugRoute
     }
     '/(app)/leagues/$leagueId/teams': {
       id: '/(app)/leagues/$leagueId/teams'
@@ -524,14 +560,27 @@ const appStaffRouteWithChildren = appStaffRoute._addFileChildren(
   appStaffRouteChildren,
 )
 
+interface appTeamsTeamSlugRouteChildren {
+  appTeamsTeamSlugPlayersRoute: typeof appTeamsTeamSlugPlayersRoute
+  appTeamsTeamSlugIndexRoute: typeof appTeamsTeamSlugIndexRoute
+}
+
+const appTeamsTeamSlugRouteChildren: appTeamsTeamSlugRouteChildren = {
+  appTeamsTeamSlugPlayersRoute: appTeamsTeamSlugPlayersRoute,
+  appTeamsTeamSlugIndexRoute: appTeamsTeamSlugIndexRoute,
+}
+
+const appTeamsTeamSlugRouteWithChildren =
+  appTeamsTeamSlugRoute._addFileChildren(appTeamsTeamSlugRouteChildren)
+
 interface appTeamsRouteChildren {
-  appTeamsTeamSlugRoute: typeof appTeamsTeamSlugRoute
+  appTeamsTeamSlugRoute: typeof appTeamsTeamSlugRouteWithChildren
   appTeamsCreateRoute: typeof appTeamsCreateRoute
   appTeamsIndexRoute: typeof appTeamsIndexRoute
 }
 
 const appTeamsRouteChildren: appTeamsRouteChildren = {
-  appTeamsTeamSlugRoute: appTeamsTeamSlugRoute,
+  appTeamsTeamSlugRoute: appTeamsTeamSlugRouteWithChildren,
   appTeamsCreateRoute: appTeamsCreateRoute,
   appTeamsIndexRoute: appTeamsIndexRoute,
 }

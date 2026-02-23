@@ -124,3 +124,74 @@ export function useCreateTeam() {
     },
   });
 }
+
+const teamPlayersAvailableQueryKey = [
+  "organization",
+  "playersAvailableForTeam",
+] as const;
+
+export type PlayerAvailableForTeam =
+  inferRouterOutputs<AppRouter>["organization"]["listPlayersAvailableForTeam"][number];
+
+export function usePlayersAvailableForTeam(options: {
+  teamId: string | undefined;
+  search?: string;
+}) {
+  const { data: organizations } = useOrganization();
+  const organizationId = organizations?.[0]?.id;
+  const searchTerm = options.search?.trim() || undefined;
+
+  return useQuery({
+    queryKey: [
+      ...teamPlayersAvailableQueryKey,
+      organizationId ?? "",
+      options.teamId ?? "",
+      searchTerm ?? "",
+    ],
+    queryFn: () =>
+      trpcClient.organization.listPlayersAvailableForTeam.query({
+        organizationId: organizationId!,
+        teamId: options.teamId!,
+        ...(searchTerm ? { search: searchTerm } : {}),
+      }),
+    enabled: Boolean(organizationId && options.teamId),
+  });
+}
+
+export function useAddPlayerToTeam() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: {
+      organizationId: string;
+      teamId: string;
+      userId: string;
+    }) => trpcClient.organization.addPlayerToTeam.mutate(input),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: [...teamPlayersAvailableQueryKey, variables.organizationId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: teamBySlugQueryKey,
+      });
+    },
+  });
+}
+
+export function useRemovePlayerFromTeam() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: {
+      organizationId: string;
+      teamId: string;
+      userId: string;
+    }) => trpcClient.organization.removePlayerFromTeam.mutate(input),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: [...teamPlayersAvailableQueryKey, variables.organizationId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: teamBySlugQueryKey,
+      });
+    },
+  });
+}
