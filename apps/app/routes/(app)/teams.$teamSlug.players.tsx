@@ -97,10 +97,16 @@ function TeamPlayers() {
     [allPlayersForDisplay, localMemberUserIds],
   );
 
-  const participatingFiltered = useMemo(
-    () => filterPlayers(participatingDisplay, searchQuery),
-    [participatingDisplay, searchQuery],
-  );
+  const participatingFiltered = useMemo(() => {
+    const filtered = filterPlayers(participatingDisplay, searchQuery);
+    const adminUserId = teamMembers.find((m) => m.role === "admin")?.userId;
+    if (!adminUserId) return filtered;
+    return [...filtered].sort((a, b) => {
+      if (a.userId === adminUserId) return -1;
+      if (b.userId === adminUserId) return 1;
+      return 0;
+    });
+  }, [participatingDisplay, searchQuery, teamMembers]);
 
   const availableFiltered = useMemo(
     () => filterPlayers(availableDisplay, searchQuery),
@@ -231,7 +237,9 @@ function TeamPlayers() {
             <Skeleton className="h-20 w-full rounded-lg" />
           ) : participatingFiltered.length > 0 ? (
             <ul className="space-y-2">
-              {participatingFiltered.map((p) => (
+              {participatingFiltered.map((p) => {
+                const role = teamMembers.find((m) => m.userId === p.userId)?.role;
+                return (
                 <li
                   key={p.userId}
                   className="flex items-center justify-between gap-4 p-4 border rounded-lg"
@@ -246,7 +254,14 @@ function TeamPlayers() {
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="font-medium">{p.userName ?? "—"}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium">{p.userName ?? "—"}</p>
+                        {role === "admin" && (
+                          <span className="inline-flex px-2 py-0.5 text-xs font-medium rounded-full bg-primary/10 text-primary">
+                            Admin
+                          </span>
+                        )}
+                      </div>
                       <p className="text-sm text-muted-foreground">
                         {p.userEmail ?? "—"}
                       </p>
@@ -261,7 +276,8 @@ function TeamPlayers() {
                     Remove from team
                   </Button>
                 </li>
-              ))}
+              );
+              })}
             </ul>
           ) : searchQuery.trim() ? (
             <p className="text-sm text-muted-foreground py-2">

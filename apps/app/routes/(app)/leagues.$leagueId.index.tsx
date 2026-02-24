@@ -1,4 +1,10 @@
 import { useLeagueById } from "@/lib/queries/league";
+import { getLeagueAgeGroupLabel } from "@/lib/league-age-group";
+import type { LeagueScheduleDisplay } from "@/lib/league-schedule";
+import {
+  formatLeagueTimeRange12h,
+  getLeagueScheduleDayLabels,
+} from "@/lib/league-schedule";
 import {
   Avatar,
   AvatarFallback,
@@ -12,6 +18,35 @@ import {
 } from "@repo/ui";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, Trophy, Users } from "lucide-react";
+
+function LeagueScheduleDisplay({
+  league,
+}: {
+  league: LeagueScheduleDisplay;
+}) {
+  const dayLabels = getLeagueScheduleDayLabels(league);
+  const timeRange = formatLeagueTimeRange12h(league);
+  const hasDays = dayLabels.length > 0;
+  const hasTime = timeRange.length > 0;
+  if (!hasDays && !hasTime) return <p className="text-sm">—</p>;
+  return (
+    <div className="flex flex-col gap-2">
+      {hasDays && (
+        <div className="flex flex-wrap gap-1">
+          {dayLabels.map((label) => (
+            <span
+              key={label}
+              className="inline-flex px-2 py-0.5 text-xs font-medium rounded-full bg-secondary"
+            >
+              {label}
+            </span>
+          ))}
+        </div>
+      )}
+      {hasTime && <p className="text-sm text-muted-foreground">{timeRange}</p>}
+    </div>
+  );
+}
 
 export const Route = createFileRoute("/(app)/leagues/$leagueId/")({
   component: LeagueDetail,
@@ -103,26 +138,42 @@ function LeagueDetail() {
               </div>
               <div className="space-y-1">
                 <p className="text-sm font-medium text-muted-foreground">
-                  Status
-                </p>
-                <span className="inline-flex px-2 py-0.5 text-xs font-medium rounded-full bg-muted text-muted-foreground">
-                  Placeholder
-                </span>
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">
-                  Created
+                  Age group
                 </p>
                 <p className="text-sm">
-                  {new Date(league.createdAt).toLocaleDateString()}
+                  {getLeagueAgeGroupLabel(league.ageGroup ?? undefined)}
                 </p>
               </div>
               <div className="space-y-1">
                 <p className="text-sm font-medium text-muted-foreground">
-                  Last updated
+                  Schedule
+                </p>
+                <LeagueScheduleDisplay league={league} />
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">
+                  League code
+                </p>
+                <p className="font-mono text-sm">{league.slug ?? "—"}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">
+                  Start date
                 </p>
                 <p className="text-sm">
-                  {new Date(league.updatedAt).toLocaleDateString()}
+                  {league.startDate
+                    ? new Date(league.startDate + "T12:00:00").toLocaleDateString()
+                    : "—"}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">
+                  End date
+                </p>
+                <p className="text-sm">
+                  {league.endDate
+                    ? new Date(league.endDate + "T12:00:00").toLocaleDateString()
+                    : "—"}
                 </p>
               </div>
             </CardContent>

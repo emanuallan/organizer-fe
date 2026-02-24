@@ -1,11 +1,17 @@
 import { getErrorMessage } from "@/lib/errors";
 import { useDebouncedValue } from "@/lib/hooks/useDebouncedValue";
-import { useOrganization } from "@/lib/queries/organization";
+import { getLeagueAgeGroupLabel } from "@/lib/league-age-group";
+import type { LeagueScheduleDisplay } from "@/lib/league-schedule";
+import {
+  formatLeagueTimeRange12h,
+  getLeagueScheduleDayLabels,
+} from "@/lib/league-schedule";
 import {
   useDeleteLeague,
-  useLeagueStats,
   useLeagues,
+  useLeagueStats,
 } from "@/lib/queries/league";
+import { useOrganization } from "@/lib/queries/organization";
 import { toast } from "@/lib/toast";
 import {
   Avatar,
@@ -26,11 +32,7 @@ import {
   Skeleton,
 } from "@repo/ui";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import {
-  Search,
-  UserPlus,
-  Trophy,
-} from "lucide-react";
+import { Search, Trophy, UserPlus } from "lucide-react";
 import { useState } from "react";
 
 export const Route = createFileRoute("/(app)/leagues/")({
@@ -39,6 +41,33 @@ export const Route = createFileRoute("/(app)/leagues/")({
 
 const TABLE_SKELETON_ROWS = 5;
 const SEARCH_DEBOUNCE_MS = 800;
+
+function LeagueScheduleCell({ league }: { league: LeagueScheduleDisplay }) {
+  const dayLabels = getLeagueScheduleDayLabels(league);
+  const timeRange = formatLeagueTimeRange12h(league);
+  const hasDays = dayLabels.length > 0;
+  const hasTime = timeRange.length > 0;
+  if (!hasDays && !hasTime) return <span>—</span>;
+  return (
+    <div className="flex flex-col gap-1.5">
+      {hasDays && (
+        <div className="flex flex-wrap gap-1">
+          {dayLabels.map((label) => (
+            <span
+              key={label}
+              className="inline-flex px-2 py-0.5 text-xs font-medium rounded-full bg-secondary"
+            >
+              {label}
+            </span>
+          ))}
+        </div>
+      )}
+      {hasTime && (
+        <span className="text-muted-foreground">{timeRange}</span>
+      )}
+    </div>
+  );
+}
 
 function LeaguesList() {
   const { data: organizations } = useOrganization();
@@ -116,7 +145,9 @@ function LeaguesList() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Leagues</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Active Leagues
+            </CardTitle>
             <Trophy className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
@@ -192,7 +223,9 @@ function LeaguesList() {
                 <thead>
                   <tr className="border-b bg-muted/50">
                     <th className="text-left p-4 font-medium">League</th>
-                    <th className="text-left p-4 font-medium">Last updated</th>
+                    <th className="text-left p-4 font-medium">Code</th>
+                    <th className="text-left p-4 font-medium">Age group</th>
+                    <th className="text-left p-4 font-medium">Schedule</th>
                     <th className="text-left p-4 font-medium">Actions</th>
                   </tr>
                 </thead>
@@ -209,6 +242,15 @@ function LeaguesList() {
                                   <Skeleton className="h-3 w-24" />
                                 </div>
                               </div>
+                            </td>
+                            <td className="p-4">
+                              <Skeleton className="h-4 w-12" />
+                            </td>
+                            <td className="p-4">
+                              <Skeleton className="h-4 w-14" />
+                            </td>
+                            <td className="p-4">
+                              <Skeleton className="h-4 w-24" />
                             </td>
                             <td className="p-4">
                               <Skeleton className="h-4 w-20" />
@@ -245,10 +287,16 @@ function LeaguesList() {
                               </div>
                             </div>
                           </td>
+                          <td className="p-4 font-mono text-sm text-muted-foreground">
+                            {league.slug ?? "—"}
+                          </td>
                           <td className="p-4 text-sm text-muted-foreground">
-                            {new Date(
-                              league.updatedAt,
-                            ).toLocaleDateString()}
+                            {getLeagueAgeGroupLabel(
+                              league.ageGroup ?? undefined,
+                            )}
+                          </td>
+                          <td className="p-4 text-sm text-muted-foreground">
+                            <LeagueScheduleCell league={league} />
                           </td>
                           <td className="p-4">
                             <div className="flex items-center gap-2">
@@ -292,15 +340,12 @@ function LeaguesList() {
           <DialogHeader>
             <DialogTitle>Delete league</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete &quot;{leagueToDelete?.name}&quot;?
-              This action cannot be undone.
+              Are you sure you want to delete &quot;{leagueToDelete?.name}
+              &quot;? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setLeagueToDelete(null)}
-            >
+            <Button variant="outline" onClick={() => setLeagueToDelete(null)}>
               Cancel
             </Button>
             <Button

@@ -228,7 +228,11 @@ function TeamDetail() {
                         </tr>
                       </thead>
                       <tbody>
-                        {team.members.map((m) => (
+                        {[...team.members]
+                          .sort((a, b) =>
+                            a.role === "admin" ? -1 : b.role === "admin" ? 1 : 0,
+                          )
+                          .map((m) => (
                           <tr key={m.id} className="border-b">
                             <td className="p-4">
                               <div className="flex items-center gap-3">
@@ -240,9 +244,16 @@ function TeamDetail() {
                                       .join("") || "?"}
                                   </AvatarFallback>
                                 </Avatar>
-                                <p className="font-medium">
-                                  {m.user.name || "—"}
-                                </p>
+                                <div className="flex items-center gap-2">
+                                  <p className="font-medium">
+                                    {m.user.name || "—"}
+                                  </p>
+                                  {m.role === "admin" && (
+                                    <span className="inline-flex px-2 py-0.5 text-xs font-medium rounded-full bg-primary/10 text-primary">
+                                      Admin
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                             </td>
                             <td className="p-4 text-sm text-muted-foreground">

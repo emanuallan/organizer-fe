@@ -110,13 +110,16 @@ export function useDeleteTeam() {
 }
 
 /**
- * Creates a team in the given organization. Invalidates the team list on success.
+ * Creates a team in the given organization with a designated team admin. Invalidates the team list on success.
  */
 export function useCreateTeam() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: { organizationId: string; name: string }) =>
-      trpcClient.organization.createTeam.mutate(input),
+    mutationFn: (input: {
+      organizationId: string;
+      name: string;
+      adminUserId: string;
+    }) => trpcClient.organization.createTeam.mutate(input),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: [...teamListQueryKey, variables.organizationId],

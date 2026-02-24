@@ -10,6 +10,7 @@ import {
   unique,
 } from "drizzle-orm/pg-core";
 import { organization } from "./organization";
+import { teamMemberRoleEnum } from "./team_member_role";
 import { user } from "./user";
 import { playerStatusEnum } from "./player_status";
 
@@ -74,6 +75,8 @@ export const teamMember = pgTable(
       .notNull()
       .unique()
       .references(() => user.id, { onDelete: "cascade" }),
+    /** Role: one 'admin' per team (team admin), rest 'member'. */
+    role: teamMemberRoleEnum().default("member").notNull(),
     createdAt: timestamp({ withTimezone: true, mode: "date" })
       .defaultNow()
       .notNull(),

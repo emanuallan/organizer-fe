@@ -12,7 +12,7 @@ import {
   user,
 } from "@repo/db";
 import { TRPCError } from "@trpc/server";
-import { and, count, eq, gte, ilike, inArray, isNull, lt, or } from "drizzle-orm";
+import { and, count, eq, gte, ilike, inArray, isNull, lt, ne, or } from "drizzle-orm";
 import { z } from "zod";
 import { sendOrganizationInvitation } from "../lib/email.js";
 import { protectedProcedure, router } from "../lib/trpc.js";
@@ -742,6 +742,7 @@ export const organizationRouter = router({
         .values({
           teamId: input.teamId,
           userId: input.userId,
+          role: "member",
         })
         .returning();
       if (!created) {
@@ -753,7 +754,7 @@ export const organizationRouter = router({
       return created;
     }),
 
-  /** Remove a player from a team (delete team_member). User must be a member of the org. */
+  /** Remove a player from a team (delete team_member). If removing the team admin, another member is promoted to admin. User must be a member of the org. */
   removePlayerFromTeam: protectedProcedure
     .input(
       z.object({
@@ -775,21 +776,45 @@ export const organizationRouter = router({
           message: "Not a member of this organization",
         });
       }
-      const deleted = await ctx.db
+      const current = await ctx.db.query.teamMember.findFirst({
+        where: and(
+          eq(teamMember.teamId, input.teamId),
+          eq(teamMember.userId, input.userId),
+        ),
+        columns: { id: true, role: true },
+      });
+      if (!current) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Player is not on this team",
+        });
+      }
+      if (current.role === "admin") {
+        const [nextAdminRow] = await ctx.db
+          .select({ id: teamMember.id })
+          .from(teamMember)
+          .where(
+            and(
+              eq(teamMember.teamId, input.teamId),
+              ne(teamMember.userId, input.userId),
+            ),
+          )
+          .limit(1);
+        if (nextAdminRow) {
+          await ctx.db
+            .update(teamMember)
+            .set({ role: "admin", updatedAt: new Date() })
+            .where(eq(teamMember.id, nextAdminRow.id));
+        }
+      }
+      await ctx.db
         .delete(teamMember)
         .where(
           and(
             eq(teamMember.teamId, input.teamId),
             eq(teamMember.userId, input.userId),
           ),
-        )
-        .returning({ id: teamMember.id });
-      if (deleted.length === 0) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Player is not on this team",
-        });
-      }
+        );
       return { success: true };
     }),
 
@@ -834,6 +859,57 @@ export const organizationRouter = router({
         organizationId: z.string(),
         name: z.string().min(1, "League name is required"),
         image: z.string().optional(),
+        ageGroup: z
+          .enum([
+            "toddlers",
+            "u6",
+            "u7",
+            "u8",
+            "u9",
+            "u10",
+            "u11",
+            "u12",
+            "u13",
+            "u14",
+            "u15",
+            "u16",
+            "u17",
+            "u18",
+            "adult",
+            "o30",
+            "o50",
+            "o60",
+          ])
+          .optional(),
+        days: z
+          .array(
+            z.enum([
+              "monday",
+              "tuesday",
+              "wednesday",
+              "thursday",
+              "friday",
+              "saturday",
+              "sunday",
+            ]),
+          )
+          .optional(),
+        startTime: z
+          .string()
+          .regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, "Use HH:mm format")
+          .optional(),
+        endTime: z
+          .string()
+          .regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, "Use HH:mm format")
+          .optional(),
+        startDate: z
+          .string()
+          .regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD format")
+          .optional(),
+        endDate: z
+          .string()
+          .regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD format")
+          .optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -849,12 +925,41 @@ export const organizationRouter = router({
           message: "Not a member of this organization",
         });
       }
+      const baseSlug =
+        input.name
+          .trim()
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-|-$/g, "") || "league";
+      let slug = baseSlug;
+      let suffix = 0;
+      while (true) {
+        const [existing] = await ctx.db
+          .select({ id: league.id })
+          .from(league)
+          .where(
+            and(
+              eq(league.organizationId, input.organizationId),
+              eq(league.slug, slug),
+            ),
+          );
+        if (!existing) break;
+        suffix += 1;
+        slug = `${baseSlug}-${suffix}`;
+      }
       const [created] = await ctx.db
         .insert(league)
         .values({
           organizationId: input.organizationId,
           name: input.name.trim(),
+          slug,
           ...(input.image ? { image: input.image } : {}),
+          ...(input.ageGroup ? { ageGroup: input.ageGroup } : {}),
+          ...(input.days?.length ? { days: input.days } : {}),
+          ...(input.startTime ? { startTime: input.startTime } : {}),
+          ...(input.endTime ? { endTime: input.endTime } : {}),
+          ...(input.startDate ? { startDate: input.startDate } : {}),
+          ...(input.endDate ? { endDate: input.endDate } : {}),
         })
         .returning();
       if (!created) {
@@ -866,12 +971,13 @@ export const organizationRouter = router({
       return created;
     }),
 
-  /** Create a team in the organization. User must be a member of the org. */
+  /** Create a team in the organization with a designated team admin. Admin can be any org player; they are added to the roster if needed and as the first team member with role admin. */
   createTeam: protectedProcedure
     .input(
       z.object({
         organizationId: z.string(),
         name: z.string().min(1, "Team name is required"),
+        adminUserId: z.string().min(1, "Team admin is required"),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -898,6 +1004,33 @@ export const organizationRouter = router({
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to create team",
+        });
+      }
+      await ctx.db
+        .insert(organizationPlayer)
+        .values({
+          organizationId: input.organizationId,
+          userId: input.adminUserId,
+          status: "inactive",
+        })
+        .onConflictDoNothing({
+          target: [
+            organizationPlayer.organizationId,
+            organizationPlayer.userId,
+          ],
+        });
+      const [adminMember] = await ctx.db
+        .insert(teamMember)
+        .values({
+          teamId: createdTeam.id,
+          userId: input.adminUserId,
+          role: "admin",
+        })
+        .returning();
+      if (!adminMember) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to add team admin",
         });
       }
       return createdTeam;
@@ -1151,6 +1284,7 @@ export const organizationRouter = router({
         .values({
           teamId: input.teamId,
           userId: existingUser.id,
+          role: "member",
         })
         .returning();
       if (!created) {
