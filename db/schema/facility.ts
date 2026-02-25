@@ -7,6 +7,7 @@ import { relations, sql } from "drizzle-orm";
 import {
   index,
   integer,
+  jsonb,
   pgEnum,
   pgTable,
   text,
@@ -23,6 +24,30 @@ export const facilitySurfaceTypeEnum = pgEnum("facility_surface_type", [
   "other",
 ]);
 
+/** Operating hours for a single day (HH:mm). */
+export type FacilityDayHours = {
+  startTime: string;
+  endTime: string;
+};
+
+/** Day keys for operating schedule (monday–sunday). */
+export const FACILITY_DAY_KEYS = [
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday",
+  "sunday",
+] as const;
+
+export type FacilityDayKey = (typeof FACILITY_DAY_KEYS)[number];
+
+/** Operating schedule: per-day hours. Missing or null = closed. */
+export type FacilityOperatingSchedule = Partial<
+  Record<FacilityDayKey, FacilityDayHours | null>
+>;
+
 /**
  * Facility: a venue (e.g. "Riverside Park", "Community Center") owned or used by the org.
  */
@@ -38,6 +63,10 @@ export const facility = pgTable(
     name: text().notNull(),
     slug: text().notNull(),
     address: text(),
+    /** Operating hours by day (monday–sunday). Each day may have { startTime, endTime } in HH:mm or be null/omitted for closed. */
+    operatingSchedule: jsonb("operating_schedule")
+      .$type<FacilityOperatingSchedule | null>()
+      .default(null),
     createdAt: timestamp({ withTimezone: true, mode: "date" })
       .defaultNow()
       .notNull(),

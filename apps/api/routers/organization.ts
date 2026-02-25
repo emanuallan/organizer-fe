@@ -14,6 +14,25 @@ import {
 import { TRPCError } from "@trpc/server";
 import { and, count, eq, gte, ilike, inArray, isNull, lt, ne, or } from "drizzle-orm";
 import { z } from "zod";
+
+const facilityDayKeys = [
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday",
+  "sunday",
+] as const;
+const facilityOperatingScheduleSchema = z
+  .record(
+    z.enum(facilityDayKeys),
+    z.union([
+      z.object({ startTime: z.string(), endTime: z.string() }),
+      z.null(),
+    ]),
+  )
+  .optional();
 import { sendOrganizationInvitation } from "../lib/email.js";
 import { protectedProcedure, router } from "../lib/trpc.js";
 
@@ -881,27 +900,7 @@ export const organizationRouter = router({
             "o60",
           ])
           .optional(),
-        days: z
-          .array(
-            z.enum([
-              "monday",
-              "tuesday",
-              "wednesday",
-              "thursday",
-              "friday",
-              "saturday",
-              "sunday",
-            ]),
-          )
-          .optional(),
-        startTime: z
-          .string()
-          .regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, "Use HH:mm format")
-          .optional(),
-        endTime: z
-          .string()
-          .regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, "Use HH:mm format")
-          .optional(),
+        operatingSchedule: facilityOperatingScheduleSchema,
         startDate: z
           .string()
           .regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD format")
@@ -955,9 +954,9 @@ export const organizationRouter = router({
           slug,
           ...(input.image ? { image: input.image } : {}),
           ...(input.ageGroup ? { ageGroup: input.ageGroup } : {}),
-          ...(input.days?.length ? { days: input.days } : {}),
-          ...(input.startTime ? { startTime: input.startTime } : {}),
-          ...(input.endTime ? { endTime: input.endTime } : {}),
+          ...(input.operatingSchedule != null
+            ? { operatingSchedule: input.operatingSchedule }
+            : {}),
           ...(input.startDate ? { startDate: input.startDate } : {}),
           ...(input.endDate ? { endDate: input.endDate } : {}),
         })
@@ -1821,6 +1820,7 @@ export const organizationRouter = router({
           name: true,
           slug: true,
           address: true,
+          operatingSchedule: true,
           createdAt: true,
           updatedAt: true,
         },
@@ -1880,6 +1880,7 @@ export const organizationRouter = router({
         name: z.string().min(1, "Name is required"),
         address: z.string().optional(),
         slug: z.string().optional(),
+        operatingSchedule: facilityOperatingScheduleSchema,
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -1926,6 +1927,9 @@ export const organizationRouter = router({
           name: input.name.trim(),
           slug,
           ...(input.address != null ? { address: input.address.trim() || null } : {}),
+          ...(input.operatingSchedule != null
+            ? { operatingSchedule: input.operatingSchedule }
+            : {}),
         })
         .returning();
       if (!created) {
@@ -1945,6 +1949,7 @@ export const organizationRouter = router({
         facilityId: z.string(),
         name: z.string().min(1).optional(),
         address: z.string().optional(),
+        operatingSchedule: facilityOperatingScheduleSchema,
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -1965,6 +1970,9 @@ export const organizationRouter = router({
         .set({
           ...(input.name != null ? { name: input.name.trim() } : {}),
           ...(input.address !== undefined ? { address: input.address?.trim() || null } : {}),
+          ...(input.operatingSchedule !== undefined
+            ? { operatingSchedule: input.operatingSchedule }
+            : {}),
           updatedAt: new Date(),
         })
         .where(

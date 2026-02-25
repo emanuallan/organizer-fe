@@ -1,10 +1,6 @@
 import { useLeagueById } from "@/lib/queries/league";
 import { getLeagueAgeGroupLabel } from "@/lib/league-age-group";
-import type { LeagueScheduleDisplay } from "@/lib/league-schedule";
-import {
-  formatLeagueTimeRange12h,
-  getLeagueScheduleDayLabels,
-} from "@/lib/league-schedule";
+import { getFacilityScheduleGroups } from "@/lib/facility-schedule";
 import {
   Avatar,
   AvatarFallback,
@@ -20,30 +16,31 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, Trophy, Users } from "lucide-react";
 
 function LeagueScheduleDisplay({
-  league,
+  operatingSchedule,
 }: {
-  league: LeagueScheduleDisplay;
+  operatingSchedule: import("@repo/db/schema/facility").FacilityOperatingSchedule | null | undefined;
 }) {
-  const dayLabels = getLeagueScheduleDayLabels(league);
-  const timeRange = formatLeagueTimeRange12h(league);
-  const hasDays = dayLabels.length > 0;
-  const hasTime = timeRange.length > 0;
-  if (!hasDays && !hasTime) return <p className="text-sm">—</p>;
+  const groups = getFacilityScheduleGroups(operatingSchedule).filter(
+    (g) => g.timeRange !== "Closed",
+  );
+  if (groups.length === 0) return <p className="text-sm">—</p>;
   return (
     <div className="flex flex-col gap-2">
-      {hasDays && (
-        <div className="flex flex-wrap gap-1">
-          {dayLabels.map((label) => (
-            <span
-              key={label}
-              className="inline-flex px-2 py-0.5 text-xs font-medium rounded-full bg-secondary"
-            >
-              {label}
-            </span>
-          ))}
+      {groups.map((group, i) => (
+        <div key={i} className="flex flex-col gap-1">
+          <div className="flex flex-wrap gap-1">
+            {group.dayLabels.map((label) => (
+              <span
+                key={label}
+                className="inline-flex px-2 py-0.5 text-xs font-medium rounded-full bg-secondary"
+              >
+                {label}
+              </span>
+            ))}
+          </div>
+          <p className="text-sm text-muted-foreground">{group.timeRange}</p>
         </div>
-      )}
-      {hasTime && <p className="text-sm text-muted-foreground">{timeRange}</p>}
+      ))}
     </div>
   );
 }
@@ -148,7 +145,7 @@ function LeagueDetail() {
                 <p className="text-sm font-medium text-muted-foreground">
                   Schedule
                 </p>
-                <LeagueScheduleDisplay league={league} />
+                <LeagueScheduleDisplay operatingSchedule={league.operatingSchedule} />
               </div>
               <div className="space-y-1">
                 <p className="text-sm font-medium text-muted-foreground">

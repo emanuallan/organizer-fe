@@ -6,11 +6,13 @@ import { relations, sql } from "drizzle-orm";
 import {
   date,
   index,
+  jsonb,
   pgTable,
   text,
   timestamp,
   unique,
 } from "drizzle-orm/pg-core";
+import type { FacilityOperatingSchedule } from "./facility";
 import { leagueAgeGroupEnum } from "./league_age_group";
 import { organization } from "./organization";
 
@@ -29,12 +31,10 @@ export const league = pgTable(
       ),
     image: text(),
     ageGroup: leagueAgeGroupEnum(),
-    /** Days of the week the league runs (e.g. ['monday', 'wednesday']). */
-    days: text("days").array(),
-    /** Start time in HH:mm (e.g. '09:00'). */
-    startTime: text("start_time"),
-    /** End time in HH:mm (e.g. '17:00'). */
-    endTime: text("end_time"),
+    /** Operating schedule by day (same format as facility): per-day start/end in HH:mm, null = not scheduled. */
+    operatingSchedule: jsonb("operating_schedule")
+      .$type<FacilityOperatingSchedule | null>()
+      .default(null),
     /** Optional start date of the league. */
     startDate: date("start_date", { mode: "string" }),
     /** Optional end date of the league. */

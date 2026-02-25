@@ -1,4 +1,5 @@
 import { getErrorMessage } from "@/lib/errors";
+import { getFacilityScheduleGroups } from "@/lib/facility-schedule";
 import { useDebouncedValue } from "@/lib/hooks/useDebouncedValue";
 import { useOrganization } from "@/lib/queries/organization";
 import {
@@ -22,6 +23,7 @@ import {
   Input,
   Skeleton,
 } from "@repo/ui";
+import type { FacilityOperatingSchedule } from "@repo/db/schema/facility";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { MapPin, Plus, Search } from "lucide-react";
 import { useState } from "react";
@@ -31,6 +33,34 @@ export const Route = createFileRoute("/(app)/facilities/")({
 });
 
 const SEARCH_DEBOUNCE_MS = 800;
+
+function FacilityScheduleCell({
+  schedule,
+}: {
+  schedule: FacilityOperatingSchedule | null | undefined;
+}) {
+  const groups = getFacilityScheduleGroups(schedule);
+  if (groups.length === 0) return <span className="text-muted-foreground">—</span>;
+  return (
+    <div className="flex flex-col gap-1.5">
+      {groups.map((group, i) => (
+        <div key={i} className="flex flex-col gap-1">
+          <div className="flex flex-wrap gap-1">
+            {group.dayLabels.map((label) => (
+              <span
+                key={label}
+                className="inline-flex px-2 py-0.5 text-xs font-medium rounded-full bg-secondary"
+              >
+                {label}
+              </span>
+            ))}
+          </div>
+          <span className="text-muted-foreground text-sm">{group.timeRange}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function FacilitiesList() {
   const { data: organizations } = useOrganization();
@@ -117,6 +147,7 @@ function FacilitiesList() {
                   <tr className="border-b bg-muted/50">
                     <th className="text-left p-4 font-medium">Name</th>
                     <th className="text-left p-4 font-medium">Address</th>
+                    <th className="text-left p-4 font-medium">Schedule</th>
                     <th className="text-left p-4 font-medium">Surfaces</th>
                     <th className="text-right p-4 font-medium">Actions</th>
                   </tr>
@@ -135,6 +166,9 @@ function FacilitiesList() {
                       </td>
                       <td className="p-4 text-sm text-muted-foreground">
                         {f.address || "—"}
+                      </td>
+                      <td className="p-4 text-sm text-muted-foreground">
+                        <FacilityScheduleCell schedule={f.operatingSchedule} />
                       </td>
                       <td className="p-4 text-sm text-muted-foreground">
                         {f.surfaces?.length ?? 0}

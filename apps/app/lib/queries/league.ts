@@ -92,6 +92,10 @@ export function useCreateLeague() {
       organizationId: string;
       name: string;
       image?: string;
+      ageGroup?: string;
+      operatingSchedule?: import("@repo/db/schema/facility").FacilityOperatingSchedule;
+      startDate?: string;
+      endDate?: string;
     }) => trpcClient.organization.createLeague.mutate(input),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({

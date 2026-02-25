@@ -1,6 +1,7 @@
 /**
- * League schedule: days of week and time range.
- * Stored in DB as days[] ('monday', ...) and startTime/endTime ('HH:mm').
+ * League schedule: same format as facility operating schedule.
+ * Per-day hours (monday–sunday): { startTime, endTime } in HH:mm or null.
+ * Display uses getFacilityScheduleGroups from @/lib/facility-schedule.
  */
 
 export const LEAGUE_DAY_VALUES = [
@@ -35,12 +36,6 @@ export const LEAGUE_DAY_OPTIONS: { value: LeagueDayValue; label: string }[] =
     label: DAY_LABELS[value],
   }));
 
-export interface LeagueScheduleDisplay {
-  days: string[] | null | undefined;
-  startTime: string | null | undefined;
-  endTime: string | null | undefined;
-}
-
 /** Parse "HH:mm" and return 12-hour string, e.g. "9:00 AM", "5:30 PM". */
 export function formatTimeTo12h(time: string): string {
   if (!time?.trim()) return "";
@@ -50,40 +45,4 @@ export function formatTimeTo12h(time: string): string {
   const minute = Number.isNaN(m) ? 0 : m;
   const ampm = h < 12 ? "AM" : "PM";
   return `${hour}:${minute.toString().padStart(2, "0")} ${ampm}`;
-}
-
-/** Format time range for display in 12-hour format, e.g. "9:00 AM – 5:00 PM". */
-export function formatLeagueTimeRange12h(league: LeagueScheduleDisplay): string {
-  const start = league.startTime ?? "";
-  const end = league.endTime ?? "";
-  const s12 = formatTimeTo12h(start);
-  const e12 = formatTimeTo12h(end);
-  if (s12 && e12) return `${s12} – ${e12}`;
-  return s12 || e12 || "";
-}
-
-/** Sorted day labels for a league (for rendering chips). */
-export function getLeagueScheduleDayLabels(
-  league: LeagueScheduleDisplay,
-): string[] {
-  if (!league.days?.length) return [];
-  return league.days
-    .slice()
-    .sort(
-      (a, b) =>
-        LEAGUE_DAY_VALUES.indexOf(a as LeagueDayValue) -
-        LEAGUE_DAY_VALUES.indexOf(b as LeagueDayValue),
-    )
-    .map(getLeagueDayLabel);
-}
-
-/** Format schedule for display, e.g. "Mon, Wed, Fri · 9:00 AM – 5:00 PM". */
-export function formatLeagueSchedule(league: LeagueScheduleDisplay): string {
-  const dayLabels = getLeagueScheduleDayLabels(league);
-  const days = dayLabels.length ? dayLabels.join(", ") : "";
-  const timeRange = formatLeagueTimeRange12h(league);
-  if (days && timeRange) return `${days} · ${timeRange}`;
-  if (days) return days;
-  if (timeRange) return timeRange;
-  return "—";
 }

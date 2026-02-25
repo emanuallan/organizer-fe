@@ -1,4 +1,11 @@
+import {
+  getInitialOperatingScheduleFormState,
+  OperatingScheduleForm,
+  scheduleFromFormState,
+  type OperatingScheduleFormState,
+} from "@/components/operating-schedule-form";
 import { getErrorMessage } from "@/lib/errors";
+import { getFacilityScheduleGroups } from "@/lib/facility-schedule";
 import {
   useAddFacilitySurface,
   useDeleteFacility,
@@ -26,7 +33,7 @@ import {
   Skeleton,
 } from "@repo/ui";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { ArrowLeft, MapPin, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Clock, MapPin, Pencil, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 
 const SURFACE_TYPES = [
@@ -62,6 +69,10 @@ function FacilityDetail() {
   const [editName, setEditName] = useState("");
   const [editingAddress, setEditingAddress] = useState(false);
   const [editAddress, setEditAddress] = useState("");
+  const [editingSchedule, setEditingSchedule] = useState(false);
+  const [scheduleForm, setScheduleForm] = useState<OperatingScheduleFormState>(
+    getInitialOperatingScheduleFormState(null),
+  );
 
   const handleDeleteConfirm = () => {
     if (!organizationId || !facility?.id) return;
@@ -117,6 +128,32 @@ function FacilityDetail() {
   const startEditAddress = () => {
     setEditAddress(facility?.address ?? "");
     setEditingAddress(true);
+  };
+
+  const startEditSchedule = () => {
+    setScheduleForm(
+      getInitialOperatingScheduleFormState(facility?.operatingSchedule ?? null),
+    );
+    setEditingSchedule(true);
+  };
+
+  const saveSchedule = () => {
+    if (!organizationId || !facility?.id) return;
+    const payload = scheduleFromFormState(scheduleForm);
+    updateFacility.mutate(
+      {
+        organizationId,
+        facilityId: facility.id,
+        operatingSchedule: payload,
+      },
+      {
+        onSuccess: () => {
+          toast.success("Operating schedule updated");
+          setEditingSchedule(false);
+        },
+        onError: (err) => toast.error(getErrorMessage(err)),
+      },
+    );
   };
 
   const saveName = () => {
@@ -290,6 +327,88 @@ function FacilityDetail() {
                   </p>
                 )}
               </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Clock className="h-5 w-5" />
+                  <div>
+                    <CardTitle>Operating schedule</CardTitle>
+                    <CardDescription>
+                      Hours open by day. Leave empty for closed.
+                    </CardDescription>
+                  </div>
+                </div>
+                {!editingSchedule && (
+                  <Button variant="outline" size="sm" onClick={startEditSchedule}>
+                    <Pencil className="h-4 w-4 mr-2" />
+                    Edit
+                  </Button>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent>
+              {editingSchedule ? (
+                <div className="space-y-4">
+                  <OperatingScheduleForm
+                    value={scheduleForm}
+                    onChange={setScheduleForm}
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      onClick={saveSchedule}
+                      disabled={updateFacility.isPending}
+                    >
+                      {updateFacility.isPending ? "Saving…" : "Save schedule"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setScheduleForm(
+                          getInitialOperatingScheduleFormState(
+                            facility?.operatingSchedule ?? null,
+                          ),
+                        );
+                        setEditingSchedule(false);
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {getFacilityScheduleGroups(facility.operatingSchedule).length ===
+                  0 ? (
+                    <p className="text-sm text-muted-foreground">No hours set.</p>
+                  ) : (
+                    getFacilityScheduleGroups(facility.operatingSchedule).map(
+                      (group, i) => (
+                        <div key={i} className="flex flex-col gap-1">
+                          <div className="flex flex-wrap gap-1">
+                            {group.dayLabels.map((label) => (
+                              <span
+                                key={label}
+                                className="inline-flex px-2 py-0.5 text-xs font-medium rounded-full bg-secondary"
+                              >
+                                {label}
+                              </span>
+                            ))}
+                          </div>
+                          <span className="text-sm text-muted-foreground">
+                            {group.timeRange}
+                          </span>
+                        </div>
+                      ),
+                    )
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
 

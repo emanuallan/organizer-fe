@@ -1,3 +1,9 @@
+import {
+  getInitialOperatingScheduleFormState,
+  OperatingScheduleForm,
+  scheduleFromFormState,
+  type OperatingScheduleFormState,
+} from "@/components/operating-schedule-form";
 import { getErrorMessage } from "@/lib/errors";
 import { useOrganization } from "@/lib/queries/organization";
 import { useCreateFacility } from "@/lib/queries/facility";
@@ -13,7 +19,7 @@ import {
   Label,
 } from "@repo/ui";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
-import { ArrowLeft, MapPin } from "lucide-react";
+import { ArrowLeft, MapPin, Clock } from "lucide-react";
 import { useState } from "react";
 
 export const Route = createFileRoute("/(app)/facilities/create")({
@@ -29,15 +35,19 @@ function CreateFacility() {
   const createFacility = useCreateFacility();
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
+  const [operatingSchedule, setOperatingSchedule] =
+    useState<OperatingScheduleFormState>(getInitialOperatingScheduleFormState(null));
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!organizationId || !name.trim()) return;
+    const schedulePayload = scheduleFromFormState(operatingSchedule);
     createFacility.mutate(
       {
         organizationId,
         name: name.trim(),
         ...(address.trim() ? { address: address.trim() } : {}),
+        operatingSchedule: schedulePayload,
       },
       {
         onSuccess: (data) => {
@@ -78,7 +88,7 @@ function CreateFacility() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid gap-2">
               <Label htmlFor="name">Name</Label>
               <Input
@@ -108,6 +118,17 @@ function CreateFacility() {
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
                 placeholder="e.g. 123 Main St, City"
+                disabled={!organizationId}
+              />
+            </div>
+            <div className="grid gap-2">
+              <div className="flex items-center gap-2">
+                <Clock className="h-5 w-5" />
+                <Label>Operating schedule (optional)</Label>
+              </div>
+              <OperatingScheduleForm
+                value={operatingSchedule}
+                onChange={setOperatingSchedule}
                 disabled={!organizationId}
               />
             </div>

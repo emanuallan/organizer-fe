@@ -58,6 +58,7 @@ export function useCreateFacility() {
       name: string;
       address?: string;
       slug?: string;
+      operatingSchedule?: import("@repo/db/schema/facility").FacilityOperatingSchedule;
     }) => trpcClient.organization.createFacility.mutate(input),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
@@ -75,6 +76,7 @@ export function useUpdateFacility() {
       facilityId: string;
       name?: string;
       address?: string;
+      operatingSchedule?: import("@repo/db/schema/facility").FacilityOperatingSchedule;
     }) => trpcClient.organization.updateFacility.mutate(input),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({

@@ -1,11 +1,7 @@
 import { getErrorMessage } from "@/lib/errors";
+import { getFacilityScheduleGroups } from "@/lib/facility-schedule";
 import { useDebouncedValue } from "@/lib/hooks/useDebouncedValue";
 import { getLeagueAgeGroupLabel } from "@/lib/league-age-group";
-import type { LeagueScheduleDisplay } from "@/lib/league-schedule";
-import {
-  formatLeagueTimeRange12h,
-  getLeagueScheduleDayLabels,
-} from "@/lib/league-schedule";
 import {
   useDeleteLeague,
   useLeagues,
@@ -42,29 +38,32 @@ export const Route = createFileRoute("/(app)/leagues/")({
 const TABLE_SKELETON_ROWS = 5;
 const SEARCH_DEBOUNCE_MS = 800;
 
-function LeagueScheduleCell({ league }: { league: LeagueScheduleDisplay }) {
-  const dayLabels = getLeagueScheduleDayLabels(league);
-  const timeRange = formatLeagueTimeRange12h(league);
-  const hasDays = dayLabels.length > 0;
-  const hasTime = timeRange.length > 0;
-  if (!hasDays && !hasTime) return <span>—</span>;
+function LeagueScheduleCell({
+  operatingSchedule,
+}: {
+  operatingSchedule: import("@repo/db/schema/facility").FacilityOperatingSchedule | null | undefined;
+}) {
+  const groups = getFacilityScheduleGroups(operatingSchedule).filter(
+    (g) => g.timeRange !== "Closed",
+  );
+  if (groups.length === 0) return <span>—</span>;
   return (
     <div className="flex flex-col gap-1.5">
-      {hasDays && (
-        <div className="flex flex-wrap gap-1">
-          {dayLabels.map((label) => (
-            <span
-              key={label}
-              className="inline-flex px-2 py-0.5 text-xs font-medium rounded-full bg-secondary"
-            >
-              {label}
-            </span>
-          ))}
+      {groups.map((group, i) => (
+        <div key={i} className="flex flex-col gap-1">
+          <div className="flex flex-wrap gap-1">
+            {group.dayLabels.map((label) => (
+              <span
+                key={label}
+                className="inline-flex px-2 py-0.5 text-xs font-medium rounded-full bg-secondary"
+              >
+                {label}
+              </span>
+            ))}
+          </div>
+          <span className="text-muted-foreground text-sm">{group.timeRange}</span>
         </div>
-      )}
-      {hasTime && (
-        <span className="text-muted-foreground">{timeRange}</span>
-      )}
+      ))}
     </div>
   );
 }
@@ -296,7 +295,7 @@ function LeaguesList() {
                             )}
                           </td>
                           <td className="p-4 text-sm text-muted-foreground">
-                            <LeagueScheduleCell league={league} />
+                            <LeagueScheduleCell operatingSchedule={league.operatingSchedule} />
                           </td>
                           <td className="p-4">
                             <div className="flex items-center gap-2">

@@ -1,12 +1,14 @@
+import {
+  getInitialOperatingScheduleFormState,
+  OperatingScheduleForm,
+  scheduleFromFormState,
+  type OperatingScheduleFormState,
+} from "@/components/operating-schedule-form";
 import { getErrorMessage } from "@/lib/errors";
 import {
   LEAGUE_AGE_GROUP_OPTIONS,
   type LeagueAgeGroupValue,
 } from "@/lib/league-age-group";
-import {
-  LEAGUE_DAY_OPTIONS,
-  type LeagueDayValue,
-} from "@/lib/league-schedule";
 import { useOrganization } from "@/lib/queries/organization";
 import { useCreateLeague } from "@/lib/queries/league";
 import { toast } from "@/lib/toast";
@@ -21,7 +23,7 @@ import {
   Label,
 } from "@repo/ui";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
-import { ArrowLeft, Trophy } from "lucide-react";
+import { ArrowLeft, Clock, Trophy } from "lucide-react";
 import { useState } from "react";
 
 export const Route = createFileRoute("/(app)/leagues/create")({
@@ -37,17 +39,10 @@ function CreateLeague() {
   const createLeague = useCreateLeague();
   const [name, setName] = useState("");
   const [ageGroup, setAgeGroup] = useState<LeagueAgeGroupValue | "">("");
-  const [days, setDays] = useState<LeagueDayValue[]>([]);
-  const [startTime, setStartTime] = useState("");
-  const [endTime, setEndTime] = useState("");
+  const [operatingSchedule, setOperatingSchedule] =
+    useState<OperatingScheduleFormState>(getInitialOperatingScheduleFormState(null));
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-
-  const toggleDay = (day: LeagueDayValue) => {
-    setDays((prev) =>
-      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day],
-    );
-  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,9 +52,7 @@ function CreateLeague() {
         organizationId,
         name: name.trim(),
         ...(ageGroup ? { ageGroup: ageGroup as LeagueAgeGroupValue } : {}),
-        ...(days.length ? { days } : {}),
-        ...(startTime ? { startTime } : {}),
-        ...(endTime ? { endTime } : {}),
+        operatingSchedule: scheduleFromFormState(operatingSchedule),
         ...(startDate ? { startDate } : {}),
         ...(endDate ? { endDate } : {}),
       },
@@ -144,48 +137,15 @@ function CreateLeague() {
               </select>
             </div>
             <div className="grid gap-2">
-              <Label>Days (optional)</Label>
-              <div className="flex flex-wrap gap-3">
-                {LEAGUE_DAY_OPTIONS.map((opt) => (
-                  <label
-                    key={opt.value}
-                    className="flex items-center gap-2 cursor-pointer"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={days.includes(opt.value)}
-                      onChange={() => toggleDay(opt.value)}
-                      disabled={!organizationId}
-                      className="h-4 w-4 rounded border-input"
-                    />
-                    <span className="text-sm">{opt.label}</span>
-                  </label>
-                ))}
+              <div className="flex items-center gap-2">
+                <Clock className="h-5 w-5" />
+                <Label>Schedule (optional)</Label>
               </div>
-            </div>
-            <div className="grid gap-2 sm:grid-cols-2">
-              <div className="grid gap-2">
-                <Label htmlFor="startTime">Start time (optional)</Label>
-                <input
-                  id="startTime"
-                  type="time"
-                  value={startTime}
-                  onChange={(e) => setStartTime(e.target.value)}
-                  disabled={!organizationId}
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="endTime">End time (optional)</Label>
-                <input
-                  id="endTime"
-                  type="time"
-                  value={endTime}
-                  onChange={(e) => setEndTime(e.target.value)}
-                  disabled={!organizationId}
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                />
-              </div>
+              <OperatingScheduleForm
+                value={operatingSchedule}
+                onChange={setOperatingSchedule}
+                disabled={!organizationId}
+              />
             </div>
             <div className="grid gap-2 sm:grid-cols-2">
               <div className="grid gap-2">
